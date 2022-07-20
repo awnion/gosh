@@ -34,17 +34,32 @@ build: copy_abi clear_screen
 test: copy_abi clear_screen
 	cargo test
 
-bench: copy_abi
+qemu: ## may need to setup qemu
+	docker run --privileged --rm tonistiigi/binfmt --install all
+
+debug_build: copy_abi
 	@echo === prepare-builder
-	## may need to setup qemu
-	# docker run --privileged --rm tonistiigi/binfmt --install all
 	( ${DOCKER} buildx inspect ${DOCKER_BUILDER_NAME} ) || ${DOCKER} buildx create \
 		--name ${DOCKER_BUILDER_NAME} \
 		--driver docker-container
 
 	@echo === build + publish
 	${DOCKER_BUILDX} \
-		--no-cache \
+		--load \
+		-t teamgosh/git \
+		--progress=${PROGRESS} \
+		\
+		-f Dockerfile \
+		.
+
+bench: copy_abi
+	@echo === prepare-builder
+	( ${DOCKER} buildx inspect ${DOCKER_BUILDER_NAME} ) || ${DOCKER} buildx create \
+		--name ${DOCKER_BUILDER_NAME} \
+		--driver docker-container
+
+	@echo === build + publish
+	${DOCKER_BUILDX} \
 		--progress=${PROGRESS} \
 		--platform ${PLATFORM} \
 		\
@@ -54,8 +69,6 @@ bench: copy_abi
 
 publish: copy_abi
 	@echo === prepare-builder
-	## may need to setup qemu
-	# docker run --privileged --rm tonistiigi/binfmt --install all
 	( ${DOCKER} buildx inspect ${DOCKER_BUILDER_NAME} ) || ${DOCKER} buildx create \
 		--name ${DOCKER_BUILDER_NAME} \
 		--driver docker-container
