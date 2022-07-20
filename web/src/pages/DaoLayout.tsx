@@ -4,8 +4,8 @@ import { useRecoilValue } from 'recoil';
 import Spinner from '../components/Spinner';
 import { useGoshDao, useGoshWallet } from '../hooks/gosh.hooks';
 import { userStatePersistAtom } from '../store/user.state';
-import { IGoshDao, IGoshWallet } from '../types/types';
-import { classNames } from '../utils';
+import { IGoshDao, IGoshWallet } from 'web-common/lib/types/types';
+import { classNames } from 'web-common/lib/utils';
 
 export type TDaoLayoutOutletContext = {
     dao: IGoshDao;

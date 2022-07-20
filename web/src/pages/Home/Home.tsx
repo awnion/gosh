@@ -1,9 +1,17 @@
 import { Link } from 'react-router-dom';
-import { useRecoilValue } from 'recoil';
+import { atom, atomFamily, RecoilState, useRecoilValue } from 'recoil';
 import { userStatePersistAtom } from '../../store/user.state';
+import { testAtom } from 'web-common/lib/store/test.state';
+
+const a = atomFamily({ key: 'test', default: [] })('keey');
+const b = testAtom();
 
 const HomePage = () => {
+    console.debug('works', userStatePersistAtom);
+    console.debug('a', a);
+    console.debug('b', b.t);
     const userStatePersist = useRecoilValue(userStatePersistAtom);
+    const test = useRecoilValue(b.t);
 
     return (
         <div className="container pt-16">
@@ -12,13 +20,11 @@ const HomePage = () => {
                     Git Open Source Hodler
                 </h1>
                 <div className="text-base mt-10 sm:text-lg sm:max-w-2xl sm:mx-auto md:text-xl text-left">
-                    <p>
-                        GOSH secures delivery and decentralization of your code.
-                    </p>
+                    <p>GOSH secures delivery and decentralization of your code.</p>
                     <p className="mt-6">
-                        The first development platform blockchain, purpose-built
-                        for securing the software supply chain and extracting
-                        the value locked in your projects.
+                        The first development platform blockchain, purpose-built for
+                        securing the software supply chain and extracting the value locked
+                        in your projects.
                     </p>
                 </div>
                 <div className="my-10 flex flex-wrap justify-center gap-x-8 gap-y-4">

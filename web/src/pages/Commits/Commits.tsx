@@ -4,11 +4,11 @@ import { useRecoilValue } from 'recoil';
 import BranchSelect from '../../components/BranchSelect';
 import CopyClipboard from '../../components/CopyClipboard';
 import Spinner from '../../components/Spinner';
-import { getCommit, getCommitTime, ZERO_COMMIT } from '../../helpers';
+import { getCommit, getCommitTime, ZERO_COMMIT } from 'web-common/lib/helpers';
 import { useGoshRepoBranches } from '../../hooks/gosh.hooks';
 import { goshCurrBranchSelector } from '../../store/gosh.state';
-import { IGoshRepository, TGoshCommit } from '../../types/types';
-import { shortString } from '../../utils';
+import { IGoshRepository, TGoshCommit } from 'web-common/lib/types/types';
+import { shortString } from 'web-common/lib/utils';
 import { TRepoLayoutOutletContext } from '../RepoLayout';
 
 const CommitsPage = () => {

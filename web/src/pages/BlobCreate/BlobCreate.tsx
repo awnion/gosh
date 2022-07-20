@@ -4,12 +4,12 @@ import { Navigate, useNavigate, useOutletContext, useParams } from 'react-router
 import { TRepoLayoutOutletContext } from '../RepoLayout';
 import TextField from '../../components/FormikForms/TextField';
 import { useMonaco } from '@monaco-editor/react';
-import { getCodeLanguageFromFilename, isMainBranch } from '../../helpers';
+import { getCodeLanguageFromFilename, isMainBranch } from 'web-common/lib/helpers';
 import * as Yup from 'yup';
 import { Tab } from '@headlessui/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCode, faEye } from '@fortawesome/free-solid-svg-icons';
-import { classNames } from '../../utils';
+import { classNames } from 'web-common/lib/utils';
 import BlobEditor from '../../components/Blob/Editor';
 import BlobPreview from '../../components/Blob/Preview';
 import FormCommitBlock from './FormCommitBlock';
@@ -22,7 +22,7 @@ import {
 } from '../../hooks/gosh.hooks';
 import { userStateAtom } from '../../store/user.state';
 import RepoBreadcrumbs from '../../components/Repo/Breadcrumbs';
-import { EGoshError, GoshError } from '../../types/errors';
+import { EGoshError, GoshError } from 'web-common/lib/types/errors';
 import { toast } from 'react-toastify';
 
 type TFormValues = {

@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useOutletContext, useParams } from 'react-router-dom';
 import Spinner from '../../components/Spinner';
-import { GoshSmvProposal } from '../../types/classes';
-import { sleep } from '../../utils';
+import { GoshSmvProposal } from 'web-common/lib/types/classes';
+import { sleep } from 'web-common/lib/utils';
 import { TDaoLayoutOutletContext } from '../DaoLayout';
-import { getPaginatedAccounts } from '../../helpers';
+import { getPaginatedAccounts } from 'web-common/lib/helpers';
 import SmvBalance from '../../components/SmvBalance/SmvBalance';
 import EventListItem from './ListItem';
 import { useSmvBalance } from '../../hooks/gosh.hooks';

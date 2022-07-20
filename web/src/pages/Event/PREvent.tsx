@@ -7,22 +7,22 @@ import {
     goshClient,
     loadFromIPFS,
     zstd,
-} from '../../helpers';
+} from 'web-common/lib/helpers';
 import {
     IGoshCommit,
     IGoshRepository,
     TGoshCommitDetails,
     TGoshDiff,
     TGoshTreeItem,
-} from '../../types/types';
+} from 'web-common/lib/types/types';
 import BlobDiffPreview from '../../components/Blob/DiffPreview';
-import { GoshCommit, GoshDiff, GoshRepository } from '../../types/classes';
+import { GoshCommit, GoshDiff, GoshRepository } from 'web-common/lib/types/classes';
 import { useGoshRoot } from '../../hooks/gosh.hooks';
 import { AccountType } from '@eversdk/appkit';
 import { Buffer } from 'buffer';
 import * as Diff from 'diff';
 import CopyClipboard from '../../components/CopyClipboard';
-import { shortString } from '../../utils';
+import { shortString } from 'web-common/lib/utils';
 import { Link } from 'react-router-dom';
 
 type TCommitBlobsType = {

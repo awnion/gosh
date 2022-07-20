@@ -4,11 +4,11 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useRecoilValue } from 'recoil';
 import Spinner from '../../components/Spinner';
-import { getPaginatedAccounts, goshClient } from '../../helpers';
+import { getPaginatedAccounts, goshClient } from 'web-common/lib/helpers';
 import { useGoshRoot } from '../../hooks/gosh.hooks';
 import { userStateAtom } from '../../store/user.state';
-import { GoshDao, GoshWallet } from '../../types/classes';
-import { TGoshDaoDetails } from '../../types/types';
+import { GoshDao, GoshWallet } from 'web-common/lib/types/classes';
+import { TGoshDaoDetails } from 'web-common/lib/types/types';
 
 const DaosPage = () => {
     const userState = useRecoilValue(userStateAtom);

@@ -3,9 +3,9 @@ import { Field } from 'formik';
 import TextField from '../../components/FormikForms/TextField';
 import TextareaField from '../../components/FormikForms/TextareaField';
 import { useNavigate } from 'react-router-dom';
-import { classNames } from '../../utils';
+import { classNames } from 'web-common/lib/utils';
 import Spinner from '../../components/Spinner';
-import { TCreateCommitCallbackParams } from '../../types/types';
+import { TCreateCommitCallbackParams } from 'web-common/lib/types/types';
 import CommitProgress from './CommitProgress';
 
 type TFormCommitBlockProps = {

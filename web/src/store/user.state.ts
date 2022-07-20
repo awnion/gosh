@@ -1,7 +1,6 @@
-import { atom } from "recoil";
-import { recoilPersist } from "recoil-persist";
-import { TUserState, TUserStatePersist } from "../types/types";
-
+import { atom } from 'recoil';
+import { recoilPersist } from 'recoil-persist';
+import { TUserState, TUserStatePersist } from 'web-common/lib/types/types';
 
 const { persistAtom } = recoilPersist({ key: 'recoil' });
 
@@ -10,9 +9,9 @@ export const userStatePersistAtom = atom<TUserStatePersist>({
     default: {
         phrase: undefined,
         nonce: undefined,
-        pin: undefined
+        pin: undefined,
     },
-    effects_UNSTABLE: [persistAtom]
+    effects_UNSTABLE: [persistAtom],
 });
 
 export const userStateAtom = atom<TUserState>({
@@ -21,6 +20,6 @@ export const userStateAtom = atom<TUserState>({
         phrase: undefined,
         nonce: undefined,
         pin: undefined,
-        keys: undefined
-    }
+        keys: undefined,
+    },
 });

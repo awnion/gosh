@@ -1,10 +1,9 @@
-import React from "react";
-import { Menu, Transition } from "@headlessui/react";
-import { Link } from "react-router-dom";
-import { classNames } from "../../utils";
-import { useResetRecoilState } from "recoil";
-import { userStateAtom, userStatePersistAtom } from "../../store/user.state";
-
+import React from 'react';
+import { Menu, Transition } from '@headlessui/react';
+import { Link } from 'react-router-dom';
+import { classNames } from 'web-common/lib/utils';
+import { useResetRecoilState } from 'recoil';
+import { userStateAtom, userStatePersistAtom } from '../../store/user.state';
 
 const DropdownMenu = () => {
     const resetUserState = useResetRecoilState(userStateAtom);
@@ -20,8 +19,8 @@ const DropdownMenu = () => {
             onClick: () => {
                 resetUserState();
                 resetUserStatePersist();
-            }
-        }
+            },
+        },
     ];
 
     return (
@@ -58,6 +57,6 @@ const DropdownMenu = () => {
             </Transition>
         </Menu>
     );
-}
+};
 
 export default DropdownMenu;

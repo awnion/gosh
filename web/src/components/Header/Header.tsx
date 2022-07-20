@@ -1,13 +1,11 @@
-import React from "react";
-import { Disclosure } from "@headlessui/react";
-import { Link, useLocation } from "react-router-dom";
-import { useRecoilValue } from "recoil";
-import { userStatePersistAtom } from "../../store/user.state";
-import logoBlack from "../../assets/images/logo-black.svg";
-import DropdownMenu from "./DropdownMenu";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPaperPlane } from "@fortawesome/free-regular-svg-icons";
-
+import { Disclosure } from '@headlessui/react';
+import { Link, useLocation } from 'react-router-dom';
+import { useRecoilValue } from 'recoil';
+import { userStatePersistAtom } from '../../store/user.state';
+import logoBlack from '../../assets/images/logo-black.svg';
+import DropdownMenu from './DropdownMenu';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faPaperPlane } from '@fortawesome/free-regular-svg-icons';
 
 const Header = () => {
     const userStatePersist = useRecoilValue(userStatePersistAtom);
@@ -22,7 +20,11 @@ const Header = () => {
                 {() => (
                     <>
                         <Link to="/">
-                            <img src={logoBlack} alt="Logo" className="block h-10 sm:h-12 w-auto" />
+                            <img
+                                src={logoBlack}
+                                alt="Logo"
+                                className="block h-10 sm:h-12 w-auto"
+                            />
                         </Link>
 
                         <div className="flex items-center gap-x-4 sm:gap-x-34px ml-4">
@@ -33,13 +35,13 @@ const Header = () => {
                                 className="text-gray-050a15 sm:text-gray-53596d hover:underline"
                             >
                                 <FontAwesomeIcon icon={faPaperPlane} size="lg" />
-                                <span className="ml-3 hidden sm:inline">Our telegram</span>
+                                <span className="ml-3 hidden sm:inline">
+                                    Our telegram
+                                </span>
                             </a>
-                            {
-                                !userStatePersist.phrase &&
+                            {!userStatePersist.phrase &&
                                 location.pathname.search(/signin|signup/) < 0 &&
-                                location.pathname !== '/'
-                                && (
+                                location.pathname !== '/' && (
                                     <>
                                         <Link
                                             to={`/account/signup`}
@@ -97,6 +99,6 @@ const Header = () => {
             </Disclosure>
         </header>
     );
-}
+};
 
 export default Header;

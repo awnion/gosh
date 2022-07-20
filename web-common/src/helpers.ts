@@ -3,6 +3,7 @@ import {
     builderOpBitString,
     NetworkQueriesProtocol,
     TonClient,
+    BinaryLibrary,
 } from '@eversdk/core';
 import { toast } from 'react-toastify';
 import cryptoJs, { SHA1, SHA256 } from 'crypto-js';
@@ -18,10 +19,17 @@ import { IGoshRepository, TGoshCommit, TGoshTree, TGoshTreeItem } from './types/
 import * as Diff from 'diff';
 import GoshSnapshotAbi from './contracts/snapshot.abi.json';
 import { sleep } from './utils';
+import { libWeb } from '@eversdk/lib-web';
 // import LightningFS from '@isomorphic-git/lightning-fs';
 // import { EGoshError, GoshError } from './types/errors';
 
 // export const fs = new LightningFS('app.gosh');
+
+// eslint-disable-next-line react-hooks/rules-of-hooks
+TonClient.useBinaryLibrary(() => {
+    const promise = libWeb();
+    return promise as unknown as Promise<BinaryLibrary>;
+});
 
 export const ZERO_ADDR =
     '0:0000000000000000000000000000000000000000000000000000000000000000';
@@ -29,17 +37,21 @@ export const ZERO_COMMIT = '0000000000000000000000000000000000000000';
 export const MAX_ONCHAIN_FILE_SIZE = 15360;
 export const MAX_ONCHAIN_DIFF_SIZE = 15000;
 
+const GOSH_NETWORK = 'https://vps23.ton.dev';
+const GOSH_ROOT_ADDR =
+    '0:bd72c842fa3c5388aa2fdd17c0b5d42c9746ee2dd701a6d79f1d568e8763d136';
+const GOSH_CREATOR_ADDR =
+    '0:b14485ceeadc36806b96dd37c89ccdb77dce2cb77ad195fd738261b5fd82a365';
+const GOSH_IPFS = 'https://ipfs.network.gosh.sh';
+
 export const goshClient = new TonClient({
     network: {
-        endpoints: process.env.REACT_APP_GOSH_NETWORK?.split(','),
+        endpoints: [GOSH_NETWORK],
         queries_protocol: NetworkQueriesProtocol.WS,
     },
 });
-export const goshDaoCreator = new GoshDaoCreator(
-    goshClient,
-    process.env.REACT_APP_CREATOR_ADDR || ''
-);
-export const goshRoot = new GoshRoot(goshClient, process.env.REACT_APP_GOSH_ADDR || '');
+export const goshDaoCreator = new GoshDaoCreator(goshClient, GOSH_CREATOR_ADDR);
+export const goshRoot = new GoshRoot(goshClient, GOSH_ROOT_ADDR);
 
 export const eventTypes: { [key: number]: string } = {
     1: 'Pull request',
@@ -655,16 +667,16 @@ export const zstd = {
  * @returns
  */
 export const saveToIPFS = async (content: string, filename?: string): Promise<string> => {
-    if (!process.env.REACT_APP_IPFS) throw new Error('IPFS url undefined');
+    if (!GOSH_IPFS) throw new Error('IPFS url undefined');
 
     const form = new FormData();
     const blob = new Blob([content]);
     form.append('file', blob, filename);
 
-    const response = await fetch(
-        `${process.env.REACT_APP_IPFS}/api/v0/add?pin=true&quiet=true`,
-        { method: 'POST', body: form }
-    );
+    const response = await fetch(`${GOSH_IPFS}/api/v0/add?pin=true&quiet=true`, {
+        method: 'POST',
+        body: form,
+    });
 
     if (!response.ok)
         throw new Error(`Error while uploading (${JSON.stringify(response)})`);
@@ -678,9 +690,9 @@ export const saveToIPFS = async (content: string, filename?: string): Promise<st
  * @returns
  */
 export const loadFromIPFS = async (cid: string): Promise<Buffer> => {
-    if (!process.env.REACT_APP_IPFS) throw new Error('IPFS url undefined');
+    if (!GOSH_IPFS) throw new Error('IPFS url undefined');
 
-    const response = await fetch(`${process.env.REACT_APP_IPFS}/ipfs/${cid.toString()}`, {
+    const response = await fetch(`${GOSH_IPFS}/ipfs/${cid.toString()}`, {
         method: 'GET',
     });
 

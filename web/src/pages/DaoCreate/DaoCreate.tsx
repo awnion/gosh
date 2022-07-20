@@ -1,4 +1,3 @@
-import React from 'react';
 import { Field, FieldArray, Form, Formik } from 'formik';
 import * as Yup from 'yup';
 import TextField from '../../components/FormikForms/TextField';
@@ -9,7 +8,7 @@ import { userStateAtom } from '../../store/user.state';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTrashAlt } from '@fortawesome/free-regular-svg-icons';
 import Spinner from '../../components/Spinner';
-import { EGoshError, GoshError } from '../../types/errors';
+import { EGoshError, GoshError } from 'web-common/lib/types/errors';
 import { toast } from 'react-toastify';
 
 type TFormValues = {

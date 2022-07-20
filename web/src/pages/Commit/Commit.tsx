@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Link, useOutletContext, useParams } from 'react-router-dom';
-import { IGoshRepository, TGoshCommit } from '../../types/types';
+import { IGoshRepository, TGoshCommit } from 'web-common/lib/types/types';
 import { TRepoLayoutOutletContext } from '../RepoLayout';
-import { getCommit, getCommitTime } from '../../helpers';
+import { getCommit, getCommitTime } from 'web-common/lib/helpers';
 import CopyClipboard from '../../components/CopyClipboard';
-import { shortString } from '../../utils';
+import { shortString } from 'web-common/lib/utils';
 import Spinner from '../../components/Spinner';
 import CommitBlobs from './CommitBlobs';
 import { useGoshRepoBranches } from '../../hooks/gosh.hooks';

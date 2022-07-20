@@ -1,10 +1,9 @@
-import React, { useEffect, useRef, useState } from "react";
-import { Listbox } from "@headlessui/react";
-import { TGoshBranch } from "../../types/types";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faChevronDown, faCodeBranch } from "@fortawesome/free-solid-svg-icons";
-import { classNames } from "../../utils";
-
+import { useEffect, useRef, useState } from 'react';
+import { Listbox } from '@headlessui/react';
+import { TGoshBranch } from 'web-common/lib/types/types';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faChevronDown, faCodeBranch } from '@fortawesome/free-solid-svg-icons';
+import { classNames } from 'web-common/lib/utils';
 
 type TBranchSelectProps = {
     className?: string;
@@ -12,7 +11,7 @@ type TBranchSelectProps = {
     branches: TGoshBranch[];
     disabled?: boolean;
     onChange(selected: TGoshBranch | undefined): void;
-}
+};
 
 const BranchSelect = (props: TBranchSelectProps) => {
     const { className, branch, branches, disabled, onChange } = props;
@@ -32,15 +31,16 @@ const BranchSelect = (props: TBranchSelectProps) => {
     return (
         <Listbox
             as="div"
-            className={() => classNames(
-                'relative inline-block min-w-[7rem] max-w-[12rem] border rounded',
-                disabled ? 'bg-gray-100' : '',
-                className
-            )}
+            className={() =>
+                classNames(
+                    'relative inline-block min-w-[7rem] max-w-[12rem] border rounded',
+                    disabled ? 'bg-gray-100' : '',
+                    className
+                )
+            }
             value={branch}
             disabled={disabled}
             onChange={(value) => onChange(value)}
-
         >
             <Listbox.Button
                 as="div"
@@ -85,7 +85,7 @@ const BranchSelect = (props: TBranchSelectProps) => {
                                 return classNames(
                                     'cursor-pointer py-2 px-3 truncate border-b last:border-b-0 hover:bg-gray-50',
                                     active ? 'bg-gray-50' : ''
-                                )
+                                );
                             }}
                         >
                             {item.name}
@@ -95,6 +95,6 @@ const BranchSelect = (props: TBranchSelectProps) => {
             </Listbox.Options>
         </Listbox>
     );
-}
+};
 
 export default BranchSelect;

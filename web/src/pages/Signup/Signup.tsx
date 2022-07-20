@@ -1,21 +1,19 @@
-import React, { useEffect, useState } from "react";
-import { Form, Formik, Field } from "formik";
-import * as Yup from "yup";
-import TextareaField from "../../components/FormikForms/TextareaField";
-import SwitchField from "../../components/FormikForms/SwitchField";
-import { useEverClient } from "../../hooks/ever.hooks";
-import { useResetRecoilState, useSetRecoilState } from "recoil";
-import { useNavigate } from "react-router-dom";
-import { TonClient } from "@eversdk/core";
-import { appModalStateAtom } from "../../store/app.state";
-import PinCodeModal from "../../components/Modal/PinCode";
-import { userStatePersistAtom } from "../../store/user.state";
-
+import { useEffect, useState } from 'react';
+import { Form, Formik, Field } from 'formik';
+import * as Yup from 'yup';
+import TextareaField from '../../components/FormikForms/TextareaField';
+import SwitchField from '../../components/FormikForms/SwitchField';
+import { useEverClient } from '../../hooks/ever.hooks';
+import { useResetRecoilState, useSetRecoilState } from 'recoil';
+import { useNavigate } from 'react-router-dom';
+import { appModalStateAtom } from '../../store/app.state';
+import PinCodeModal from '../../components/Modal/PinCode';
+import { userStatePersistAtom } from '../../store/user.state';
 
 type TFormValues = {
     phrase: string;
     isConfirmed: boolean;
-}
+};
 
 const SignupPage = () => {
     const navigate = useNavigate();
@@ -24,10 +22,10 @@ const SignupPage = () => {
     const setModal = useSetRecoilState(appModalStateAtom);
     const [phrase, setPhrase] = useState<string>('');
 
-    const generatePhrase = async (client: TonClient) => {
+    const generatePhrase = async (client: any) => {
         const result = await client.crypto.mnemonic_from_random({});
         setPhrase(result.phrase);
-    }
+    };
 
     const onFormSubmit = (values: TFormValues) => {
         userStatePersistReset();
@@ -39,9 +37,9 @@ const SignupPage = () => {
                     phrase={values.phrase}
                     onUnlock={() => navigate('/account/orgs', { replace: true })}
                 />
-            )
+            ),
         });
-    }
+    };
 
     useEffect(() => {
         generatePhrase(everClient);
@@ -61,7 +59,7 @@ const SignupPage = () => {
                 onSubmit={onFormSubmit}
                 validationSchema={Yup.object().shape({
                     phrase: Yup.string().required('`Phrase` is required'),
-                    isConfirmed: Yup.boolean().oneOf([true], 'You should accept this')
+                    isConfirmed: Yup.boolean().oneOf([true], 'You should accept this'),
                 })}
                 enableReinitialize={true}
             >
@@ -76,7 +74,7 @@ const SignupPage = () => {
                                     className: '!px-7 !py-6',
                                     autoComplete: 'off',
                                     placeholder: 'GOSH root seed phrase',
-                                    readOnly: true
+                                    readOnly: true,
                                 }}
                             />
                         </div>
@@ -105,6 +103,6 @@ const SignupPage = () => {
             </Formik>
         </div>
     );
-}
+};
 
 export default SignupPage;

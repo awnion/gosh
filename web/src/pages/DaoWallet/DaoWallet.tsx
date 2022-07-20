@@ -7,7 +7,7 @@ import { useRecoilValue } from 'recoil';
 import { userStateAtom } from '../../store/user.state';
 import CopyClipboard from '../../components/CopyClipboard';
 import { TDaoLayoutOutletContext } from '../DaoLayout';
-import { EGoshError, GoshError } from '../../types/errors';
+import { EGoshError, GoshError } from 'web-common/lib/types/errors';
 import { toast } from 'react-toastify';
 import SmvBalance from '../../components/SmvBalance/SmvBalance';
 import { useSmvBalance } from '../../hooks/gosh.hooks';
