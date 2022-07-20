@@ -4,8 +4,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Link, useOutletContext, useParams } from 'react-router-dom';
 import { useRecoilValue } from 'recoil';
 import { TRepoLayoutOutletContext } from '../RepoLayout';
-import { useGoshRepoTree } from '../../hooks/gosh.hooks';
-import { goshCurrBranchSelector } from '../../store/gosh.state';
+import { useGoshRepoTree } from 'web-common/lib/hooks/gosh.hooks';
+import { goshCurrBranchSelector } from 'web-common/lib/store/gosh.state';
 import Spinner from '../../components/Spinner';
 
 const GotoPage = () => {
@@ -45,9 +45,7 @@ const GotoPage = () => {
             )}
             {!!treeItems &&
                 treeItems?.map((item, index) => {
-                    const path = `${item.path ? `${item.path}/` : ''}${
-                        item.name
-                    }`;
+                    const path = `${item.path ? `${item.path}/` : ''}${item.name}`;
                     return (
                         <div
                             key={index}

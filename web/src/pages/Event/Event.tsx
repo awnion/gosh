@@ -3,19 +3,19 @@ import { Field, Form, Formik } from 'formik';
 import { useOutletContext, useParams } from 'react-router-dom';
 import TextField from '../../components/FormikForms/TextField';
 import Spinner from '../../components/Spinner';
-import { GoshSmvProposal } from '../../types/classes';
-import { EEventType, TGoshEventDetails } from '../../types/types';
+import { GoshSmvProposal } from 'web-common/lib/types/classes';
+import { EEventType, TGoshEventDetails } from 'web-common/lib/types/types';
 import * as Yup from 'yup';
 import CopyClipboard from '../../components/CopyClipboard';
-import { shortString } from '../../utils';
-import { useGoshRoot, useSmvBalance } from '../../hooks/gosh.hooks';
+import { shortString } from 'web-common/lib/utils';
+import { useGoshRoot, useSmvBalance } from 'web-common/lib/hooks/gosh.hooks';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCalendarDays, faHashtag } from '@fortawesome/free-solid-svg-icons';
 import { TDaoLayoutOutletContext } from '../DaoLayout';
 import PREvent from './PREvent';
 import SmvBalance from '../../components/SmvBalance/SmvBalance';
-import { eventTypes, goshClient } from '../../helpers';
-import { EGoshError, GoshError } from '../../types/errors';
+import { eventTypes, goshClient } from 'web-common/lib/helpers';
+import { EGoshError, GoshError } from 'web-common/lib/types/errors';
 import { toast } from 'react-toastify';
 
 type TFormValues = {

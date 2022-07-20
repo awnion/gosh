@@ -1,10 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useOutletContext, useParams } from 'react-router-dom';
 import BranchSelect from '../../components/BranchSelect';
-import { IGoshRepository, TGoshTreeItem } from '../../types/types';
+import { IGoshRepository, TGoshTreeItem } from 'web-common/lib/types/types';
 import { TRepoLayoutOutletContext } from '../RepoLayout';
 import { useMonaco } from '@monaco-editor/react';
-import { getCodeLanguageFromFilename, isMainBranch, ZERO_COMMIT } from '../../helpers';
+import {
+    getCodeLanguageFromFilename,
+    isMainBranch,
+    ZERO_COMMIT,
+} from 'web-common/lib/helpers';
 import BlobPreview from '../../components/Blob/Preview';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -15,10 +19,13 @@ import {
 import CopyClipboard from '../../components/CopyClipboard';
 import Spinner from '../../components/Spinner';
 import { useRecoilValue } from 'recoil';
-import { goshBranchesAtom, goshCurrBranchSelector } from '../../store/gosh.state';
+import {
+    goshBranchesAtom,
+    goshCurrBranchSelector,
+} from 'web-common/lib/store/gosh.state';
 import RepoBreadcrumbs from '../../components/Repo/Breadcrumbs';
-import { GoshCommit, GoshSnapshot } from '../../types/classes';
-import { useGoshRepoTree } from '../../hooks/gosh.hooks';
+import { GoshCommit, GoshSnapshot } from 'web-common/lib/types/classes';
+import { useGoshRepoTree } from 'web-common/lib/hooks/gosh.hooks';
 import { Buffer } from 'buffer';
 import FileDownload from '../../components/FileDownload';
 

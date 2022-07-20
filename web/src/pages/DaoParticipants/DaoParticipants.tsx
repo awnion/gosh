@@ -6,13 +6,13 @@ import { useRecoilValue } from 'recoil';
 import CopyClipboard from '../../components/CopyClipboard';
 import TextField from '../../components/FormikForms/TextField';
 import Spinner from '../../components/Spinner';
-import { userStateAtom } from '../../store/user.state';
-import { GoshWallet } from '../../types/classes';
-import { shortString } from '../../utils';
+import { userStateAtom } from 'web-common/lib/store/user.state';
+import { GoshWallet } from 'web-common/lib/types/classes';
+import { shortString } from 'web-common/lib/utils';
 import * as Yup from 'yup';
 import { useOutletContext } from 'react-router-dom';
 import { TDaoLayoutOutletContext } from '../DaoLayout';
-import { EGoshError, GoshError } from '../../types/errors';
+import { EGoshError, GoshError } from 'web-common/lib/types/errors';
 import { toast } from 'react-toastify';
 
 type TParticipantFormValues = {
@@ -31,7 +31,7 @@ const DaoParticipantsPage = () => {
         console.debug('GoshWallets addreses:', walletAddrs);
 
         const participants = await Promise.all(
-            walletAddrs.map(async (addr) => {
+            walletAddrs.map(async (addr: string) => {
                 const wallet = new GoshWallet(dao.account.client, addr);
                 const pubkey = await wallet.getPubkey();
                 const smvBalance = await wallet.getSmvTokenBalance();

@@ -1,7 +1,5 @@
-import React from "react";
-import { classNames } from "../../utils";
-import BaseField, { IBaseFieldProps } from "./BaseField";
-
+import { classNames } from 'web-common/lib/utils';
+import BaseField, { IBaseFieldProps } from './BaseField';
 
 interface ITextFieldProps extends IBaseFieldProps {
     inputProps: React.InputHTMLAttributes<HTMLInputElement>;
@@ -16,7 +14,9 @@ const TextField = (props: ITextFieldProps) => {
             <div
                 className={classNames(
                     'input',
-                    form.touched[field.name] && form.errors[field.name] ? 'has-error' : null
+                    form.touched[field.name] && form.errors[field.name]
+                        ? 'has-error'
+                        : null
                 )}
             >
                 <input
@@ -27,6 +27,6 @@ const TextField = (props: ITextFieldProps) => {
             </div>
         </BaseField>
     );
-}
+};
 
-export default TextField
+export default TextField;

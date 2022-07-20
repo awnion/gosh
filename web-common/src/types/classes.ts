@@ -399,7 +399,7 @@ export class GoshWallet implements IGoshWallet {
                 // Generate patch or upload to ipfs
                 let flags = 0;
                 let patch: string = '';
-                let ipfs = null;
+                let ipfs: any = null;
                 if (!Buffer.isBuffer(modified) && !Buffer.isBuffer(original) && !isIpfs) {
                     patch = getBlobDiffPatch(name, modified, original || '');
                     patch = await zstd.compress(this.account.client, patch);
@@ -655,7 +655,7 @@ export class GoshWallet implements IGoshWallet {
                 const { content } = await snap.getSnapshot(fromCommit, treeItem);
                 console.debug('Snap name/data', name, content);
 
-                let ipfs = null;
+                let ipfs: any = null;
                 let snapdata = '';
                 const compressed = await zstd.compress(this.account.client, content);
                 if (

@@ -2,10 +2,10 @@ import { useState } from 'react';
 import { useQuery } from 'react-query';
 import { useRecoilValue } from 'recoil';
 import Spinner from '../../components/Spinner';
-import { useGoshRoot } from '../../hooks/gosh.hooks';
-import { userStateAtom } from '../../store/user.state';
-import { GoshDao, GoshRepository, GoshWallet } from '../../types/classes';
-import { TGoshRepoDetails } from '../../types/types';
+import { useGoshRoot } from 'web-common/lib/hooks/gosh.hooks';
+import { userStateAtom } from 'web-common/lib/store/user.state';
+import { GoshDao, GoshRepository, GoshWallet } from 'web-common/lib/types/classes';
+import { TGoshRepoDetails } from 'web-common/lib/types/types';
 import RepoListItem from '../DaoRepos/RepoListItem';
 
 const RepositoriesPage = () => {
@@ -62,7 +62,7 @@ const RepositoriesPage = () => {
 
                     await dao.load();
                     const repos = await Promise.all(
-                        (repoAddrs?.result || []).map(async (item) => {
+                        (repoAddrs?.result || []).map(async (item: any) => {
                             const repo = new GoshRepository(
                                 goshRoot.account.client,
                                 item.id

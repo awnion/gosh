@@ -2,8 +2,12 @@ import { faCode, faCodeFork } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Link } from 'react-router-dom';
 import CopyClipboard from '../../components/CopyClipboard';
-import { TGoshBranch, TGoshRepoDetails, TGoshTagDetails } from '../../types/types';
-import { shortString } from '../../utils';
+import {
+    TGoshBranch,
+    TGoshRepoDetails,
+    TGoshTagDetails,
+} from 'web-common/lib/types/types';
+import { shortString } from 'web-common/lib/utils';
 
 type TRepositoryListItemProps = {
     daoName: string;

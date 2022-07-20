@@ -4,30 +4,34 @@ import { Navigate, useNavigate, useOutletContext, useParams } from 'react-router
 import * as Yup from 'yup';
 import TextField from '../../components/FormikForms/TextField';
 import { Tab } from '@headlessui/react';
-import { classNames } from '../../utils';
+import { classNames } from 'web-common/lib/utils';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCode, faEye } from '@fortawesome/free-solid-svg-icons';
 import BlobEditor from '../../components/Blob/Editor';
 import FormCommitBlock from '../BlobCreate/FormCommitBlock';
 import { useMonaco } from '@monaco-editor/react';
 import { TRepoLayoutOutletContext } from '../RepoLayout';
-import { IGoshRepository, TGoshTreeItem } from '../../types/types';
-import { getCodeLanguageFromFilename, splitByPath, isMainBranch } from '../../helpers';
+import { IGoshRepository, TGoshTreeItem } from 'web-common/lib/types/types';
+import {
+    getCodeLanguageFromFilename,
+    splitByPath,
+    isMainBranch,
+} from 'web-common/lib/helpers';
 import BlobDiffPreview from '../../components/Blob/DiffPreview';
-import { goshCurrBranchSelector } from '../../store/gosh.state';
+import { goshCurrBranchSelector } from 'web-common/lib/store/gosh.state';
 import { useRecoilValue } from 'recoil';
 import {
     useCommitProgress,
     useGoshRepoBranches,
     useGoshRepoTree,
-} from '../../hooks/gosh.hooks';
-import { userStateAtom } from '../../store/user.state';
+} from 'web-common/lib/hooks/gosh.hooks';
+import { userStateAtom } from 'web-common/lib/store/user.state';
 import RepoBreadcrumbs from '../../components/Repo/Breadcrumbs';
-import { EGoshError, GoshError } from '../../types/errors';
+import { EGoshError, GoshError } from 'web-common/lib/types/errors';
 import { toast } from 'react-toastify';
 import Spinner from '../../components/Spinner';
 import { Buffer } from 'buffer';
-import { GoshCommit, GoshSnapshot } from '../../types/classes';
+import { GoshCommit, GoshSnapshot } from 'web-common/lib/types/classes';
 
 type TFormValues = {
     name: string;

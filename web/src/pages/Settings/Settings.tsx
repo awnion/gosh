@@ -1,9 +1,7 @@
-import React from "react";
-import { useRecoilValue } from "recoil";
-import CopyClipboard from "../../components/CopyClipboard";
-import { userStateAtom } from "../../store/user.state";
-import { shortString } from "../../utils";
-
+import { useRecoilValue } from 'recoil';
+import CopyClipboard from '../../components/CopyClipboard';
+import { userStateAtom } from 'web-common/lib/store/user.state';
+import { shortString } from 'web-common/lib/utils';
 
 const SettingsPage = () => {
     const userState = useRecoilValue(userStateAtom);
@@ -17,12 +15,12 @@ const SettingsPage = () => {
                     className="mt-4"
                     label={shortString(`0x${userState.keys.public}`, 10, 10)}
                     componentProps={{
-                        text: `0x${userState.keys.public}`
+                        text: `0x${userState.keys.public}`,
                     }}
                 />
             )}
         </div>
     );
-}
+};
 
 export default SettingsPage;

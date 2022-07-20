@@ -1,22 +1,21 @@
-import React, { useCallback, useEffect, useState } from "react";
-import { Dialog } from "@headlessui/react";
-import { useRecoilState, useResetRecoilState, useSetRecoilState } from "recoil";
-import { userStateAtom, userStatePersistAtom } from "../../store/user.state";
-import { SHA256 } from "crypto-js";
-import { Buffer } from "buffer";
-import { chacha20, generateRandomBytes } from "../../helpers";
-import { useEverClient } from "../../hooks/ever.hooks";
-import { appModalStateAtom } from "../../store/app.state";
-import { TUserStatePersist } from "../../types/types";
-import { toast } from "react-toastify";
-
+import { useCallback, useEffect, useState } from 'react';
+import { Dialog } from '@headlessui/react';
+import { useRecoilState, useResetRecoilState, useSetRecoilState } from 'recoil';
+import { userStateAtom, userStatePersistAtom } from 'web-common/lib/store/user.state';
+import { SHA256 } from 'crypto-js';
+import { Buffer } from 'buffer';
+import { chacha20, generateRandomBytes } from 'web-common/lib/helpers';
+import { useEverClient } from 'web-common/lib/hooks/ever.hooks';
+import { appModalStateAtom } from 'web-common/lib/store/app.state';
+import { TUserStatePersist } from 'web-common/lib/types/types';
+import { toast } from 'react-toastify';
 
 type TPinCodeModalProps = {
     unlock?: boolean;
     phrase?: string;
 
     onUnlock?(): void;
-}
+};
 
 const PinCodeModal = (props: TPinCodeModalProps) => {
     const { phrase, unlock, onUnlock } = props;
@@ -31,40 +30,60 @@ const PinCodeModal = (props: TPinCodeModalProps) => {
     const [pin, setPin] = useState<string>('');
     const [tmp, setTmp] = useState<TUserStatePersist>({ ...userStatePersist });
 
-    const onPinSubmit = useCallback(async (pin: string) => {
-        const pinHash = SHA256(pin).toString();
-        const pinKey = Number(pin).toString(16);
+    const onPinSubmit = useCallback(
+        async (pin: string) => {
+            const pinHash = SHA256(pin).toString();
+            const pinKey = Number(pin).toString(16);
 
-        if (phrase) {
-            const nonce = await generateRandomBytes(everClient, 12, true);
-            const encrypted = await chacha20.encrypt(
-                everClient,
-                Buffer.from(phrase).toString('base64'),
-                pinKey,
-                nonce
-            );
-            setTmp({ nonce, phrase: encrypted, pin: pinHash });
-            setPin('');
-        }
-
-        if (tmp.phrase && tmp.nonce) {
-            if (pinHash !== tmp.pin) {
-                toast.error('Wrong PIN', { autoClose: 1500 });
+            if (phrase) {
+                const nonce = await generateRandomBytes(everClient, 12, true);
+                const encrypted = await chacha20.encrypt(
+                    everClient,
+                    Buffer.from(phrase).toString('base64'),
+                    pinKey,
+                    nonce
+                );
+                setTmp({ nonce, phrase: encrypted, pin: pinHash });
                 setPin('');
-                if (!unlock) setTmp({ phrase: undefined, nonce: undefined, pin: undefined });
-                return;
             }
 
-            let decrypted = await chacha20.decrypt(everClient, tmp.phrase, pinKey, tmp.nonce);
-            decrypted = Buffer.from(decrypted, 'base64').toString();
-            const keys = await everClient.crypto.mnemonic_derive_sign_keys({ phrase: decrypted });
+            if (tmp.phrase && tmp.nonce) {
+                if (pinHash !== tmp.pin) {
+                    toast.error('Wrong PIN', { autoClose: 1500 });
+                    setPin('');
+                    if (!unlock)
+                        setTmp({ phrase: undefined, nonce: undefined, pin: undefined });
+                    return;
+                }
 
-            setUserStatePersist(tmp);
-            setUserState({ ...tmp, phrase: decrypted, keys });
-            setModal({ isOpen: false, element: null });
-            onUnlock && onUnlock();
-        }
-    }, [everClient, phrase, unlock, tmp, onUnlock, setModal, setUserState, setUserStatePersist]);
+                let decrypted = await chacha20.decrypt(
+                    everClient,
+                    tmp.phrase,
+                    pinKey,
+                    tmp.nonce
+                );
+                decrypted = Buffer.from(decrypted, 'base64').toString();
+                const keys = await everClient.crypto.mnemonic_derive_sign_keys({
+                    phrase: decrypted,
+                });
+
+                setUserStatePersist(tmp);
+                setUserState({ ...tmp, phrase: decrypted, keys });
+                setModal({ isOpen: false, element: null });
+                onUnlock && onUnlock();
+            }
+        },
+        [
+            everClient,
+            phrase,
+            unlock,
+            tmp,
+            onUnlock,
+            setModal,
+            setUserState,
+            setUserStatePersist,
+        ]
+    );
 
     useEffect(() => {
         if (pin.length === 4) onPinSubmit(pin);
@@ -106,6 +125,6 @@ const PinCodeModal = (props: TPinCodeModalProps) => {
             )}
         </Dialog.Panel>
     );
-}
+};
 
 export default PinCodeModal;

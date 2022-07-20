@@ -1,5 +1,5 @@
 import { Navigate, NavLink, Outlet, useOutletContext, useParams } from 'react-router-dom';
-import { classNames } from '../utils';
+import { classNames } from 'web-common/lib/utils';
 import { TDaoLayoutOutletContext } from './DaoLayout';
 
 const DaoSettingsLayout = () => {

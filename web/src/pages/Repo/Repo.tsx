@@ -14,13 +14,13 @@ import {
     faTerminal,
 } from '@fortawesome/free-solid-svg-icons';
 import { useRecoilValue } from 'recoil';
-import { useGoshRepoBranches, useGoshRepoTree } from '../../hooks/gosh.hooks';
+import { useGoshRepoBranches, useGoshRepoTree } from 'web-common/lib/hooks/gosh.hooks';
 import Spinner from '../../components/Spinner';
-import { isMainBranch, splitByPath } from '../../helpers';
+import { isMainBranch, splitByPath } from 'web-common/lib/helpers';
 import { faFile } from '@fortawesome/free-regular-svg-icons';
 import { Menu, Transition } from '@headlessui/react';
 import CopyClipboard from '../../components/CopyClipboard';
-import { shortString } from '../../utils';
+import { shortString } from 'web-common/lib/utils';
 
 const RepoPage = () => {
     const pathName = useParams()['*'] || '';
