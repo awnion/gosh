@@ -18,14 +18,14 @@ import {
     isMainBranch,
 } from 'web-common/lib/helpers';
 import BlobDiffPreview from '../../components/Blob/DiffPreview';
-import { goshCurrBranchSelector } from 'web-common/lib/store/gosh.state';
+import { goshCurrBranchSelector } from '../../store/gosh.state';
 import { useRecoilValue } from 'recoil';
 import {
     useCommitProgress,
     useGoshRepoBranches,
     useGoshRepoTree,
-} from 'web-common/lib/hooks/gosh.hooks';
-import { userStateAtom } from 'web-common/lib/store/user.state';
+} from '../../hooks/gosh.hooks';
+import { userStateAtom } from '../../store/user.state';
 import RepoBreadcrumbs from '../../components/Repo/Breadcrumbs';
 import { EGoshError, GoshError } from 'web-common/lib/types/errors';
 import { toast } from 'react-toastify';

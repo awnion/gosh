@@ -2,8 +2,8 @@ import React, { useEffect } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { useSetRecoilState, useRecoilValue } from 'recoil';
 import PinCodeModal from '../components/Modal/PinCode';
-import { appModalStateAtom } from 'web-common/lib/store/app.state';
-import { userStateAtom, userStatePersistAtom } from 'web-common/lib/store/user.state';
+import { appModalStateAtom } from '../store/app.state';
+import { userStateAtom, userStatePersistAtom } from '../store/user.state';
 
 type TProtectedLayoutProps = {
     redirect?: boolean;

@@ -8,11 +8,11 @@ import {
     useGoshWallet,
     useGoshRepoBranches,
     useGoshDao,
-} from 'web-common/lib/hooks/gosh.hooks';
+} from '../hooks/gosh.hooks';
 import { IGoshRepository, IGoshWallet } from 'web-common/lib/types/types';
 import { classNames } from 'web-common/lib/utils';
 import { useRecoilValue } from 'recoil';
-import { userStatePersistAtom } from 'web-common/lib/store/user.state';
+import { userStatePersistAtom } from '../store/user.state';
 
 export type TRepoLayoutOutletContext = {
     goshRepo: IGoshRepository;

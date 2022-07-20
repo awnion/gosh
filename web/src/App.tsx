@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Route, Routes } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 
-import { useEverClient } from 'web-common/lib/hooks/ever.hooks';
+import { useEverClient } from './hooks/ever.hooks';
 import Header from './components/Header';
 import ProtectedLayout from './pages/ProtectedLayout';
 import AccountLayout from './pages/AccountLayout';

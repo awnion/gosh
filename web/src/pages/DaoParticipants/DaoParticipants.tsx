@@ -6,7 +6,7 @@ import { useRecoilValue } from 'recoil';
 import CopyClipboard from '../../components/CopyClipboard';
 import TextField from '../../components/FormikForms/TextField';
 import Spinner from '../../components/Spinner';
-import { userStateAtom } from 'web-common/lib/store/user.state';
+import { userStateAtom } from '../../store/user.state';
 import { GoshWallet } from 'web-common/lib/types/classes';
 import { shortString } from 'web-common/lib/utils';
 import * as Yup from 'yup';

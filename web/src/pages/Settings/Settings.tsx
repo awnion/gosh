@@ -1,6 +1,6 @@
 import { useRecoilValue } from 'recoil';
 import CopyClipboard from '../../components/CopyClipboard';
-import { userStateAtom } from 'web-common/lib/store/user.state';
+import { userStateAtom } from '../../store/user.state';
 import { shortString } from 'web-common/lib/utils';
 
 const SettingsPage = () => {

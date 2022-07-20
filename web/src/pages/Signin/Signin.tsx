@@ -1,13 +1,13 @@
 import { Form, Formik, Field, ErrorMessage, FormikHelpers } from 'formik';
 import * as Yup from 'yup';
 import TextareaField from '../../components/FormikForms/TextareaField';
-import { useEverClient } from 'web-common/lib/hooks/ever.hooks';
+import { useEverClient } from '../../hooks/ever.hooks';
 import { useResetRecoilState, useSetRecoilState } from 'recoil';
 import { useNavigate } from 'react-router-dom';
 import Spinner from '../../components/Spinner';
-import { appModalStateAtom } from 'web-common/lib/store/app.state';
+import { appModalStateAtom } from '../../store/app.state';
 import PinCodeModal from '../../components/Modal/PinCode';
-import { userStatePersistAtom } from 'web-common/lib/store/user.state';
+import { userStatePersistAtom } from '../../store/user.state';
 
 type TFormValues = {
     phrase: string;

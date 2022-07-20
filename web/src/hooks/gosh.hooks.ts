@@ -1,7 +1,7 @@
 import { KeyPair } from '@eversdk/core';
 import { useCallback, useEffect, useState } from 'react';
 import { useRecoilState, useRecoilValue } from 'recoil';
-import { getRepoTree, goshClient, goshRoot } from '../helpers';
+import { getRepoTree, goshClient, goshRoot } from 'web-common/lib/helpers';
 import {
     goshBranchesAtom,
     goshCurrBranchSelector,
@@ -12,7 +12,12 @@ import {
     goshWalletAtom,
 } from '../store/gosh.state';
 import { userStateAtom } from '../store/user.state';
-import { GoshDao, GoshWallet, GoshRepository, GoshSmvLocker } from '../types/classes';
+import {
+    GoshDao,
+    GoshWallet,
+    GoshRepository,
+    GoshSmvLocker,
+} from 'web-common/lib/types/classes';
 import {
     IGoshDao,
     IGoshRepository,
@@ -21,7 +26,7 @@ import {
     TCreateCommitCallbackParams,
     TGoshBranch,
     TSmvBalanceDetails,
-} from '../types/types';
+} from 'web-common/lib/types/types';
 // import { useEverClient } from './ever.hooks';
 
 /** Create GoshRoot object */

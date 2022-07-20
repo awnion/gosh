@@ -4,13 +4,13 @@ import TextField from '../../components/FormikForms/TextField';
 import Spinner from '../../components/Spinner';
 import * as Yup from 'yup';
 import { useRecoilValue } from 'recoil';
-import { userStateAtom } from 'web-common/lib/store/user.state';
+import { userStateAtom } from '../../store/user.state';
 import CopyClipboard from '../../components/CopyClipboard';
 import { TDaoLayoutOutletContext } from '../DaoLayout';
 import { EGoshError, GoshError } from 'web-common/lib/types/errors';
 import { toast } from 'react-toastify';
 import SmvBalance from '../../components/SmvBalance/SmvBalance';
-import { useSmvBalance } from 'web-common/lib/hooks/gosh.hooks';
+import { useSmvBalance } from '../../hooks/gosh.hooks';
 
 type TMoveBalanceFormValues = {
     amount: number;

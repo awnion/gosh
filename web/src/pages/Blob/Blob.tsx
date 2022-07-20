@@ -19,13 +19,10 @@ import {
 import CopyClipboard from '../../components/CopyClipboard';
 import Spinner from '../../components/Spinner';
 import { useRecoilValue } from 'recoil';
-import {
-    goshBranchesAtom,
-    goshCurrBranchSelector,
-} from 'web-common/lib/store/gosh.state';
+import { goshBranchesAtom, goshCurrBranchSelector } from '../../store/gosh.state';
 import RepoBreadcrumbs from '../../components/Repo/Breadcrumbs';
 import { GoshCommit, GoshSnapshot } from 'web-common/lib/types/classes';
-import { useGoshRepoTree } from 'web-common/lib/hooks/gosh.hooks';
+import { useGoshRepoTree } from '../../hooks/gosh.hooks';
 import { Buffer } from 'buffer';
 import FileDownload from '../../components/FileDownload';
 

@@ -1,7 +1,7 @@
 import { Disclosure } from '@headlessui/react';
 import { Link, useLocation } from 'react-router-dom';
 import { useRecoilValue } from 'recoil';
-import { userStatePersistAtom } from 'web-common/lib/store/user.state';
+import { userStatePersistAtom } from '../../store/user.state';
 import logoBlack from '../../assets/images/logo-black.svg';
 import DropdownMenu from './DropdownMenu';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';

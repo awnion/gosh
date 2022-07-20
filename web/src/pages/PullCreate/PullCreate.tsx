@@ -17,14 +17,14 @@ import {
     getRepoTree,
     isMainBranch,
 } from 'web-common/lib/helpers';
-import { goshCurrBranchSelector } from 'web-common/lib/store/gosh.state';
+import { goshCurrBranchSelector } from '../../store/gosh.state';
 import { TRepoLayoutOutletContext } from '../RepoLayout';
 import * as Yup from 'yup';
 import FormCommitBlock from '../BlobCreate/FormCommitBlock';
 import Spinner from '../../components/Spinner';
 import SwitchField from '../../components/FormikForms/SwitchField';
-import { useCommitProgress, useGoshRepoBranches } from 'web-common/lib/hooks/gosh.hooks';
-import { userStateAtom } from 'web-common/lib/store/user.state';
+import { useCommitProgress, useGoshRepoBranches } from '../../hooks/gosh.hooks';
+import { userStateAtom } from '../../store/user.state';
 import {
     IGoshRepository,
     IGoshWallet,

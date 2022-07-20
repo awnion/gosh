@@ -5,7 +5,7 @@ import {
     TGoshTree,
     TGoshTreeItem,
     TGoshWalletDetails,
-} from '../types/types';
+} from 'web-common/lib/types/types';
 
 export const goshDaoAtom = atom<TGoshDaoDetails | undefined>({
     key: 'GoshDaoAtom',

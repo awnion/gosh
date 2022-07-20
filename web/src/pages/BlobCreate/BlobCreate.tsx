@@ -14,13 +14,13 @@ import BlobEditor from '../../components/Blob/Editor';
 import BlobPreview from '../../components/Blob/Preview';
 import FormCommitBlock from './FormCommitBlock';
 import { useRecoilValue } from 'recoil';
-import { goshCurrBranchSelector } from 'web-common/lib/store/gosh.state';
+import { goshCurrBranchSelector } from '../../store/gosh.state';
 import {
     useCommitProgress,
     useGoshRepoBranches,
     useGoshRepoTree,
-} from 'web-common/lib/hooks/gosh.hooks';
-import { userStateAtom } from 'web-common/lib/store/user.state';
+} from '../../hooks/gosh.hooks';
+import { userStateAtom } from '../../store/user.state';
 import RepoBreadcrumbs from '../../components/Repo/Breadcrumbs';
 import { EGoshError, GoshError } from 'web-common/lib/types/errors';
 import { toast } from 'react-toastify';

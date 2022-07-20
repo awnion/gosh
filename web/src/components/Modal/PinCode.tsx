@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Dialog } from '@headlessui/react';
 import { useRecoilState, useResetRecoilState, useSetRecoilState } from 'recoil';
-import { userStateAtom, userStatePersistAtom } from 'web-common/lib/store/user.state';
+import { userStateAtom, userStatePersistAtom } from '../../store/user.state';
 import { SHA256 } from 'crypto-js';
 import { Buffer } from 'buffer';
 import { chacha20, generateRandomBytes } from 'web-common/lib/helpers';
-import { useEverClient } from 'web-common/lib/hooks/ever.hooks';
-import { appModalStateAtom } from 'web-common/lib/store/app.state';
+import { useEverClient } from '../../hooks/ever.hooks';
+import { appModalStateAtom } from '../../store/app.state';
 import { TUserStatePersist } from 'web-common/lib/types/types';
 import { toast } from 'react-toastify';
 
