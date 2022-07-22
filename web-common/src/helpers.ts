@@ -55,6 +55,8 @@ export const goshRoot = new GoshRoot(goshClient, GOSH_ROOT_ADDR);
 
 export const eventTypes: { [key: number]: string } = {
     1: 'Pull request',
+    2: 'Add SMV branch protection',
+    3: 'Remove SMV branch protection',
 };
 
 export const getPaginatedAccounts = async (params: {
@@ -144,11 +146,6 @@ export const toEvers = (value: any, round: number = 3): number => {
  */
 export const fromEvers = (value: number): number => {
     return value * 10 ** 9;
-};
-
-export const isMainBranch = (branch: string = 'main'): boolean => {
-    return false;
-    // return ['master', 'main'].indexOf(branch) >= 0;
 };
 
 export const sha1 = (

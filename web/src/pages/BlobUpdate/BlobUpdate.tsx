@@ -11,12 +11,8 @@ import BlobEditor from '../../components/Blob/Editor';
 import FormCommitBlock from '../BlobCreate/FormCommitBlock';
 import { useMonaco } from '@monaco-editor/react';
 import { TRepoLayoutOutletContext } from '../RepoLayout';
-import { IGoshRepository, TGoshTreeItem } from 'web-common/lib/types/types';
-import {
-    getCodeLanguageFromFilename,
-    splitByPath,
-    isMainBranch,
-} from 'web-common/lib/helpers';
+import { IGoshRepository, TGoshTreeItem } from '../../types/types';
+import { getCodeLanguageFromFilename, splitByPath } from '../../helpers';
 import BlobDiffPreview from '../../components/Blob/DiffPreview';
 import { goshCurrBranchSelector } from '../../store/gosh.state';
 import { useRecoilValue } from 'recoil';
@@ -67,7 +63,7 @@ const BlobUpdatePage = () => {
             if (!goshWallet) throw new GoshError(EGoshError.NO_WALLET);
             if (!repoName) throw new GoshError(EGoshError.NO_REPO);
             if (!branch) throw new GoshError(EGoshError.NO_BRANCH);
-            if (isMainBranch(branchName))
+            if (branch.isProtected)
                 throw new GoshError(EGoshError.PR_BRANCH, {
                     branch: branchName,
                 });
