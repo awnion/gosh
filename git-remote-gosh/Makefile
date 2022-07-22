@@ -80,10 +80,30 @@ publish: copy_abi
 		--platform ${PLATFORM} \
 		-t teamgosh/git:${GIT_COMMIT} \
 		-t teamgosh/git:${GIT_BRANCH} \
+		\
+		-f Dockerfile \
+		.
+
+publish_latest: copy_abi
+	@echo === prepare-builder
+	( ${DOCKER} buildx inspect ${DOCKER_BUILDER_NAME} ) || ${DOCKER} buildx create \
+		--name ${DOCKER_BUILDER_NAME} \
+		--driver docker-container
+
+	@echo === build + publish
+	${DOCKER_BUILDX} \
+		--push \
+		--progress=${PROGRESS} \
+		--platform ${PLATFORM} \
+		-t teamgosh/git:${GIT_COMMIT} \
+		-t teamgosh/git:${GIT_BRANCH} \
 		-t teamgosh/git:latest \
 		\
 		-f Dockerfile \
 		.
 
+pull:
+	docker pull teamgosh/git:${GIT_BRANCH}
 
-.PHONY: clean build clear_abi copy_abi clear_screen test publish bench
+
+.PHONY: clean build clear_abi copy_abi clear_screen test qemu debug_build bench publish publish_latest pull
