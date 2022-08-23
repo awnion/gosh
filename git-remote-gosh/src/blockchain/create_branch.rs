@@ -1,33 +1,48 @@
 use std::str::FromStr;
 
-use crate::git_helper::GitHelper;
+use crate::{blockchain, ipfs::IpfsService};
 use git_hash::ObjectId;
 use git_object::tree;
 use git_odb::Find;
+use git_repository::Repository;
 use git_traverse::tree::recorder;
-use crate::blockchain;
 
-use super::ZERO_SHA;
+use super::{GoshContract, TonClient, ZERO_SHA};
 
 pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
-#[derive(Debug)]
+// #[derive(Debug)]
 pub struct CreateBranchOperation<'a> {
     ancestor_commit: ObjectId,
+    cli: &'a TonClient,
+    ipfs_client: &'a IpfsService,
+    repo: &'a Repository,
+    repo_addr: String,
+    wallet: GoshContract,
     new_branch: String,
-    context: &'a mut GitHelper,
+    repo_name: String,
 }
 
 impl<'a> CreateBranchOperation<'a> {
     pub fn new(
         ancestor_commit: ObjectId,
+        cli: &'a TonClient,
+        ipfs_client: &'a IpfsService,
+        repo: &'a Repository,
+        repo_addr: &str,
+        wallet: &GoshContract,
         branch_name: impl Into<String>,
-        context: &'a mut GitHelper,
+        repo_name: &str,
     ) -> Self {
         return Self {
-            ancestor_commit: ancestor_commit,
+            ancestor_commit,
+            cli,
+            ipfs_client,
+            repo,
+            repo_addr: repo_addr.to_string(),
+            wallet: wallet.clone(),
             new_branch: branch_name.into(),
-            context: context,
+            repo_name: repo_name.to_string(),
         };
     }
 
@@ -41,51 +56,48 @@ impl<'a> CreateBranchOperation<'a> {
         Ok(())
     }
 
-    #[instrument(level = "debug")]
+    #[instrument(level = "debug", skip(self))]
     async fn preinit_branch(&mut self) -> Result<()> {
-        let wallet_contract = blockchain::user_wallet(self.context).await?;
         let params = serde_json::json!({
-            "repoName": self.context.remote.repo, 
+            "repoName": self.repo_name,
             "newName": self.new_branch,
             "fromCommit": self.ancestor_commit.to_string(),
-        });  
-        blockchain::call(
-            &self.context.es_client,
-            wallet_contract,
-            "deployBranch",
-            Some(params)
-        ).await?; 
+        });
+        blockchain::call(&self.cli, &self.wallet, "deployBranch", Some(params)).await?;
         Ok(())
     }
 
-    #[instrument(level = "debug")]
+    #[instrument(level = "debug", skip(self))]
     async fn deploy_snapshot(&mut self, file_path: &str, id: &ObjectId) -> Result<()> {
         let mut buffer: Vec<u8> = Vec::new();
         let content = self
-            .context
-            .local_repository()
+            .repo
             .objects
             .try_find(id, &mut buffer)?
             .expect("blob must be in the local repository")
             .decode()?
             .as_blob()
             .expect("It must be a blob object")
-            .data; 
+            .data;
+
         blockchain::snapshot::push_new_branch_snapshot(
-            self.context,
+            &self.cli,
+            &self.ipfs_client,
+            &self.wallet,
             &self.ancestor_commit,
             &self.new_branch,
+            &self.repo_addr,
             file_path,
-            content
-        ).await?;
+            content,
+        )
+        .await?;
         Ok(())
     }
 
-    #[instrument(level = "debug")]
+    #[instrument(level = "debug", skip(self))]
     async fn push_initial_snapshots(&mut self) -> Result<()> {
-        let all_files:Vec<recorder::Entry> = {
-            self.context
-                .local_repository()
+        let all_files: Vec<recorder::Entry> = {
+            self.repo
                 .find_object(self.ancestor_commit)?
                 .into_commit()
                 .tree()?
@@ -114,7 +126,7 @@ impl<'a> CreateBranchOperation<'a> {
         Ok(())
     }
 
-    #[instrument(level = "debug")]
+    #[instrument(level = "debug", skip(self))]
     async fn wait_branch_ready(&mut self) -> Result<()> {
         // Ensure repository contract state
         // Ping Sergey Horelishev for details
@@ -124,8 +136,8 @@ impl<'a> CreateBranchOperation<'a> {
 
     /// Run create branch operation.
     /// Returns false if it was a branch from a commit
-    /// and true if it was the first ever branch 
-    #[instrument(level = "debug")]
+    /// and true if it was the first ever branch
+    #[instrument(level = "debug", skip(self))]
     pub async fn run(&mut self) -> Result<bool> {
         let mut is_first_branch = true;
         self.prepare_commit_for_branching().await?;

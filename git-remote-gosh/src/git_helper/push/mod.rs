@@ -1,8 +1,8 @@
 #![allow(unused_variables)]
 #![allow(unused_imports)]
 use super::GitHelper;
-use crate::blockchain::{CreateBranchOperation, ZERO_SHA, user_wallet};
 use crate::blockchain::{self, tree::into_tree_contract_complient_path};
+use crate::blockchain::{user_wallet, CreateBranchOperation, ZERO_SHA};
 use git2::Repository;
 use git_diff;
 use git_hash::{self, ObjectId};
@@ -12,21 +12,14 @@ use std::env::current_dir;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 use std::{
-    collections::{
-        HashSet,
-        VecDeque,
-        HashMap
-    },
+    collections::{HashMap, HashSet, VecDeque},
     error::Error,
     str::FromStr,
     vec::Vec,
 };
-mod utilities;
 mod parallel_diffs_upload_support;
-use parallel_diffs_upload_support::{
-    ParallelDiffsUploadSupport,
-    ParallelDiff
-};
+mod utilities;
+use parallel_diffs_upload_support::{ParallelDiff, ParallelDiffsUploadSupport};
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
@@ -37,8 +30,11 @@ struct PushBlobStatistics {
 }
 
 impl PushBlobStatistics {
-    pub fn new() -> Self { 
-        Self { new_snapshots: 0, diffs: 0 } 
+    pub fn new() -> Self {
+        Self {
+            new_snapshots: 0,
+            diffs: 0,
+        }
     }
 
     pub fn add(&mut self, another: &Self) {
@@ -56,14 +52,15 @@ impl GitHelper {
         next_state_blob_id: &ObjectId,
         commit_id: &ObjectId,
         branch_name: &str,
-        statistics: &mut PushBlobStatistics, 
-        parallel_diffs_upload_support: &mut ParallelDiffsUploadSupport 
+        statistics: &mut PushBlobStatistics,
+        parallel_diffs_upload_support: &mut ParallelDiffsUploadSupport,
     ) -> Result<()> {
         let file_diff = utilities::generate_blob_diff(
             &self.local_repository().objects,
             Some(&original_blob_id),
             next_state_blob_id,
-        ).await?;
+        )
+        .await?;
         let diff = ParallelDiff::new(
             commit_id.clone(),
             branch_name.to_string(),
@@ -71,12 +68,9 @@ impl GitHelper {
             file_path.to_string(),
             file_diff.original.clone(),
             file_diff.patch.clone(),
-            file_diff.after_patch.clone()
+            file_diff.after_patch.clone(),
         );
-        parallel_diffs_upload_support.push(
-            self,
-            diff
-        ).await?;
+        parallel_diffs_upload_support.push(self, diff).await?;
         statistics.diffs += 1;
         Ok(())
     }
@@ -88,20 +82,21 @@ impl GitHelper {
         blob_id: &ObjectId,
         commit_id: &ObjectId,
         branch_name: &str,
-        statistics: &mut PushBlobStatistics, 
-        parallel_diffs_upload_support: &mut ParallelDiffsUploadSupport 
+        statistics: &mut PushBlobStatistics,
+        parallel_diffs_upload_support: &mut ParallelDiffsUploadSupport,
     ) -> Result<()> {
+        let wallet = user_wallet(self).await?;
         blockchain::snapshot::push_initial_snapshot(
-            self,
+            &self.es_client,
+            &wallet,
             branch_name,
+            &self.repo_addr,
             file_path,
-        ).await?;
+        )
+        .await?;
 
-        let file_diff = utilities::generate_blob_diff(
-            &self.local_repository().objects,
-            None,
-            blob_id,
-        ).await?;
+        let file_diff =
+            utilities::generate_blob_diff(&self.local_repository().objects, None, blob_id).await?;
         let diff = ParallelDiff::new(
             commit_id.clone(),
             branch_name.to_string(),
@@ -109,12 +104,9 @@ impl GitHelper {
             file_path.to_string(),
             file_diff.original.clone(),
             file_diff.patch.clone(),
-            file_diff.after_patch.clone()
+            file_diff.after_patch.clone(),
         );
-        parallel_diffs_upload_support.push(
-            self,
-            diff
-        ).await?;
+        parallel_diffs_upload_support.push(self, diff).await?;
         statistics.new_snapshots += 1;
         statistics.diffs += 1;
         Ok(())
@@ -143,7 +135,7 @@ impl GitHelper {
         prev_commit_id: &Option<ObjectId>,
         current_commit_id: &ObjectId,
         branch_name: &str,
-        parallel_diffs_upload_support: &mut ParallelDiffsUploadSupport
+        parallel_diffs_upload_support: &mut ParallelDiffsUploadSupport,
     ) -> Result<PushBlobStatistics> {
         let mut statistics = PushBlobStatistics::new();
         let prev_tree_root_id: Option<ObjectId> = {
@@ -176,20 +168,22 @@ impl GitHelper {
                     // This path is new
                     // (we're not handling renames yet)
                     self.push_new_blob(
-                        &file_path, 
-                        blob_id, 
-                        current_commit_id, 
+                        &file_path,
+                        blob_id,
+                        current_commit_id,
                         branch_name,
                         &mut statistics,
                         parallel_diffs_upload_support,
-                    ).await?;
-                },
+                    )
+                    .await?;
+                }
                 Some(prev_state_blob_id) => {
                     let file_diff = utilities::generate_blob_diff(
                         &self.local_repository().objects,
                         Some(&prev_state_blob_id),
                         blob_id,
-                    ).await?;
+                    )
+                    .await?;
                     let diff = ParallelDiff::new(
                         current_commit_id.clone(),
                         branch_name.to_string(),
@@ -197,12 +191,9 @@ impl GitHelper {
                         file_path.clone(),
                         file_diff.original.clone(),
                         file_diff.patch.clone(),
-                        file_diff.after_patch.clone()
+                        file_diff.after_patch.clone(),
                     );
-                    parallel_diffs_upload_support.push(
-                        self,
-                        diff
-                    ).await?;
+                    parallel_diffs_upload_support.push(self, diff).await?;
                     statistics.diffs += 1;
                 }
             }
@@ -253,12 +244,13 @@ impl GitHelper {
             iter.next().unwrap()
         };
         let parsed_remote_ref =
-            blockchain::remote_rev_parse(&self.es_client, &self.repo_addr, remote_branch_name).await?;
+            blockchain::remote_rev_parse(&self.es_client, &self.repo_addr, remote_branch_name)
+                .await?;
 
         let mut prev_commit_id: Option<ObjectId> = None;
         // 2. Find ancestor commit in local repo
         let mut ancestor_commit_id = if parsed_remote_ref == None {
-            // prev_commit_id is not filled up here. It's Ok. 
+            // prev_commit_id is not filled up here. It's Ok.
             // this means a branch is created and all initial states are filled there
             "".to_owned()
         } else {
@@ -326,11 +318,24 @@ impl GitHelper {
             }
             let originating_commit = git_hash::ObjectId::from_str(&ancestor_commit_id)?;
             let branching_point = self.get_parent_id(&originating_commit)?;
-            let mut create_branch_op = CreateBranchOperation::new(branching_point, branch_name, self);
+            let wallet = user_wallet(self).await?;
+            let mut create_branch_op = CreateBranchOperation::new(
+                branching_point,
+                &self.es_client,
+                &self.ipfs_client,
+                &self.local_git_repository,
+                &self.remote.repo,
+                &wallet,
+                branch_name,
+                &self.repo_addr,
+            );
             let is_first_ever_branch = create_branch_op.run().await?;
             prev_commit_id = {
-                if is_first_ever_branch { None }
-                else { Some(originating_commit) }
+                if is_first_ever_branch {
+                    None
+                } else {
+                    Some(originating_commit)
+                }
             };
         }
 
@@ -341,11 +346,27 @@ impl GitHelper {
                     let object_kind = self.local_repository().find_object(object_id)?.kind;
                     match object_kind {
                         git_object::Kind::Commit => {
-                            blockchain::push_commit(self, &object_id, branch_name).await?;
-                            let mut tree_diff = utilities::build_tree_diff_from_commits(
+                            let mut buffer: Vec<u8> = Vec::new();
+                            let commit = self
+                                .local_repository()
+                                .objects
+                                .try_find(object_id, &mut buffer)?
+                                .expect("Commit should exists");
+                            let wallet = user_wallet(self).await?;
+                            blockchain::push_commit(
+                                &self.es_client,
+                                &wallet,
+                                &mut self.repo_contract,
+                                &commit,
+                                &object_id,
+                                &self.remote.repo,
+                                &branch_name,
+                            )
+                            .await?;
+                            let tree_diff = utilities::build_tree_diff_from_commits(
                                 self.local_repository(),
                                 prev_commit_id,
-                                object_id.clone()
+                                object_id.clone(),
                             )?;
                             for added in tree_diff.added {
                                 self.push_new_blob(
@@ -354,10 +375,11 @@ impl GitHelper {
                                     &object_id,
                                     branch_name,
                                     &mut statistics,
-                                    &mut parallel_diffs_upload_support
-                                ).await?;
+                                    &mut parallel_diffs_upload_support,
+                                )
+                                .await?;
                             }
-                            
+
                             for update in tree_diff.updated {
                                 self.push_blob_update(
                                     &update.1.filepath.to_string(),
@@ -366,11 +388,11 @@ impl GitHelper {
                                     commit_id.as_ref().unwrap(),
                                     branch_name,
                                     &mut statistics,
-                                    &mut parallel_diffs_upload_support
+                                    &mut parallel_diffs_upload_support,
                                 )
                                 .await?;
                             }
-                            
+
                             prev_commit_id = commit_id;
                             commit_id = Some(object_id);
                         }
@@ -383,21 +405,35 @@ impl GitHelper {
                         }
                         // Not supported yet
                         git_object::Kind::Tag => unimplemented!(),
-                        git_object::Kind::Tree => blockchain::push_tree(self, &object_id).await?,
+                        git_object::Kind::Tree => {
+                            let wallet = user_wallet(self).await?;
+                            blockchain::push_tree(
+                                &self.es_client,
+                                &self.local_git_repository,
+                                &wallet,
+                                &self.remote.repo,
+                                &object_id,
+                            )
+                            .await?
+                        }
                     }
                 }
                 None => break,
             }
         }
-        parallel_diffs_upload_support.push_dangling(self).await?; 
+        parallel_diffs_upload_support.push_dangling(self).await?;
         parallel_diffs_upload_support.wait_all_diffs(self).await?;
         // 9. Set commit (move HEAD)
+        let wallet = user_wallet(self).await?;
         blockchain::notify_commit(
-            self, 
-            &latest_commit_id, 
-            branch_name, 
-            parallel_diffs_upload_support.get_parallels_number() 
-        ).await?;
+            &self.es_client,
+            &wallet,
+            &latest_commit_id,
+            &self.remote.repo,
+            branch_name,
+            parallel_diffs_upload_support.get_parallels_number(),
+        )
+        .await?;
 
         // 10. move HEAD
         //

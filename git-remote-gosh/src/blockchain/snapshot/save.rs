@@ -2,12 +2,10 @@
 use crate::abi as gosh_abi;
 use crate::blockchain::{tvm_hash, GoshContract, TonClient};
 use crate::{
-    blockchain::{call, snapshot, user_wallet},
-    git_helper::GitHelper,
+    blockchain::{call, snapshot},
     ipfs::IpfsService,
 };
 use git_hash;
-use reqwest::multipart;
 use snapshot::Snapshot;
 
 const PUSH_DIFF_MAX_TRIES: i32 = 3;
@@ -105,9 +103,10 @@ pub async fn is_diff_deployed(context: &TonClient, contract_address: &str) -> Re
     return Ok(result.is_ok());
 }
 
-#[instrument(level = "debug", skip(context))]
+#[instrument(level = "debug", skip(cli))]
 pub async fn diff_address(
-    context: &mut GitHelper,
+    cli: &TonClient,
+    repo_contract: &mut GoshContract,
     last_commit_id: &git_hash::ObjectId,
     diff_coordinate: &PushDiffCoordinate,
 ) -> Result<String> {
@@ -116,9 +115,8 @@ pub async fn diff_address(
         "index1": diff_coordinate.index_of_parallel_thread,
         "index2": diff_coordinate.order_of_diff_in_the_parallel_thread,
     });
-    let result: GetDiffAddrResult = context
-        .repo_contract
-        .run_static(&context.es_client, "getDiffAddr", Some(params))
+    let result: GetDiffAddrResult = repo_contract
+        .run_static(&cli, "getDiffAddr", Some(params))
         .await?;
     return Ok(result.address);
 }
@@ -133,11 +131,15 @@ pub fn is_going_to_ipfs(diff: &Vec<u8>, new_content: &Vec<u8>) -> bool {
     return is_going_to_ipfs;
 }
 
-#[instrument(level = "debug", skip(diff))]
+#[instrument(level = "debug", skip(cli, diff))]
 pub async fn push_diff(
-    context: &mut GitHelper,
+    ipfs_client: &IpfsService,
+    cli: &TonClient,
+    wallet: &GoshContract,
+    mut repo_contract: &mut GoshContract,
     commit_id: &git_hash::ObjectId,
     branch_name: &str,
+    repo_name: &str,
     blob_id: &git_hash::ObjectId,
     file_path: &str,
     diff_coordinate: &PushDiffCoordinate,
@@ -147,37 +149,33 @@ pub async fn push_diff(
     diff: &Vec<u8>,
     new_snapshot_content: &Vec<u8>,
 ) -> Result<tokio::task::JoinHandle<std::result::Result<(), String>>> {
-    let wallet = user_wallet(context).await?;
-    let snapshot_addr: String = (Snapshot::calculate_address(
-        &context.es_client,
-        &mut context.repo_contract,
-        branch_name,
-        file_path,
-    ))
-    .await?;
+    let snapshot_addr: String =
+        (Snapshot::calculate_address(&cli, &mut repo_contract, branch_name, file_path)).await?;
 
     let original_snapshot_content = original_snapshot_content.clone();
     let diff = diff.clone();
     let new_snapshot_content = new_snapshot_content.clone();
-    let ipfs_endpoint = context.config.ipfs_http_endpoint().to_string();
-    let es_client = context.es_client.clone();
-    let repo_name = context.remote.repo.clone();
+    let ipfs_endpoint = ipfs_client.ipfs_endpoint_address.to_string();
     let commit_id = commit_id.clone();
     let branch_name = branch_name.to_owned();
     let blob_id = blob_id.clone();
     let file_path = file_path.to_owned();
     let diff_coordinate = diff_coordinate.clone();
     let last_commit_id = last_commit_id.clone();
+
+    let wallet = wallet.clone();
+    let cli = cli.clone();
+    let repo_name = repo_name.to_string();
     return Ok(tokio::spawn(async move {
         let mut attempt = 0;
         let result = loop {
             attempt += 1;
             let result = inner_push_diff(
-                repo_name.clone(),
-                snapshot_addr.clone(),
-                wallet.clone(),
+                &cli,
+                &wallet,
+                &repo_name,
+                &snapshot_addr,
                 &ipfs_endpoint,
-                es_client.clone(),
                 &commit_id,
                 &branch_name,
                 &blob_id,
@@ -202,11 +200,11 @@ pub async fn push_diff(
 }
 
 pub async fn inner_push_diff(
-    repo_name: String,
-    snapshot_addr: String,
-    wallet: GoshContract,
+    cli: &TonClient,
+    wallet: &GoshContract,
+    repo_name: &str,
+    snapshot_addr: &str,
     ipfs_endpoint: &str,
-    es_client: TonClient,
     commit_id: &git_hash::ObjectId,
     branch_name: &str,
     blob_id: &git_hash::ObjectId,
@@ -221,7 +219,7 @@ pub async fn inner_push_diff(
     let diff = ton_client::utils::compress_zstd(diff, None)?;
     log::debug!("compressed to {} size", diff.len());
 
-    let ipfs_client = IpfsService::new(ipfs_endpoint);
+    let ipfs_client = IpfsService::build(ipfs_endpoint)?;
     let (patch, ipfs) = {
         let mut is_going_to_ipfs = is_going_to_ipfs(&diff, new_snapshot_content);
         if !is_going_to_ipfs {
@@ -231,7 +229,7 @@ pub async fn inner_push_diff(
                 "diff": hex::encode(&diff)
             });
             let apply_patch_result = wallet
-                .run_local::<GetDiffResultResult>(&es_client, "getDiffResult", Some(data))
+                .run_local::<GetDiffResultResult>(&cli, "getDiffResult", Some(data))
                 .await;
 
             if apply_patch_result.is_ok() {
@@ -264,12 +262,12 @@ pub async fn inner_push_diff(
         if ipfs.is_some() {
             format!("0x{}", sha256::digest_bytes(new_snapshot_content))
         } else {
-            format!("0x{}", tvm_hash(&es_client, new_snapshot_content).await?)
+            format!("0x{}", tvm_hash(&cli, new_snapshot_content).await?)
         }
     };
 
     let diff = Diff {
-        snapshot_addr,
+        snapshot_addr: snapshot_addr.to_string(),
         commit_id: commit_id.to_string(),
         patch,
         ipfs,
@@ -285,7 +283,7 @@ pub async fn inner_push_diff(
     let diffs: Vec<Diff> = vec![diff];
 
     let args = DeployDiffParams {
-        repo_name: repo_name,
+        repo_name: repo_name.to_string(),
         branch_name: branch_name.to_string(),
         commit_id: last_commit_id.to_string(),
         diffs,
@@ -295,17 +293,20 @@ pub async fn inner_push_diff(
     };
 
     let params = serde_json::to_value(args)?;
-    let result = call(&es_client, wallet, "deployDiff", Some(params)).await?;
+    let result = call(&cli, &wallet, "deployDiff", Some(params)).await?;
     log::debug!("deployDiff result: {:?}", result);
 
     Ok(())
 }
 
-#[instrument(level = "debug")]
+#[instrument(level = "debug", skip(cli, ipfs_client))]
 pub async fn push_new_branch_snapshot(
-    context: &mut GitHelper,
+    cli: &TonClient,
+    ipfs_client: &IpfsService,
+    wallet: &GoshContract,
     commit_id: &git_hash::ObjectId,
     branch_name: &str,
+    repo_addr: &str,
     file_path: &str,
     original_content: &[u8],
 ) -> Result<()> {
@@ -315,7 +316,7 @@ pub async fn push_new_branch_snapshot(
     let (content, ipfs) = if content.len() > 15000 {
         log::debug!("push_new_branch_snapshot->save_data_to_ipfs");
         let ipfs = Some(
-            save_data_to_ipfs(&&context.ipfs_client, &original_content)
+            save_data_to_ipfs(&ipfs_client, &original_content)
                 .await
                 .map_err(|e| {
                     log::debug!("save_data_to_ipfs error: {}", e);
@@ -329,7 +330,7 @@ pub async fn push_new_branch_snapshot(
     };
 
     let args = DeploySnapshotParams {
-        repo_address: context.repo_addr.clone(),
+        repo_address: repo_addr.to_string(),
         branch_name: branch_name.to_string(),
         commit_id: commit_id.to_string(),
         file_path: file_path.to_string(),
@@ -337,27 +338,22 @@ pub async fn push_new_branch_snapshot(
         ipfs,
     };
 
-    let wallet = user_wallet(context).await?;
     let params = serde_json::to_value(args)?;
-    let result = call(
-        &context.es_client,
-        wallet,
-        "deployNewSnapshot",
-        Some(params),
-    )
-    .await?;
+    let result = call(&cli, &wallet, "deployNewSnapshot", Some(params)).await?;
     log::debug!("deployNewSnapshot result: {:?}", result);
     Ok(())
 }
 
-#[instrument(level = "debug")]
+#[instrument(level = "debug", skip(cli))]
 pub async fn push_initial_snapshot(
-    context: &mut GitHelper,
+    cli: &TonClient,
+    wallet: &GoshContract,
     branch_name: &str,
+    repo_addr: &str,
     file_path: &str,
 ) -> Result<()> {
     let args = DeploySnapshotParams {
-        repo_address: context.repo_addr.clone(),
+        repo_address: repo_addr.to_owned(),
         branch_name: branch_name.to_string(),
         commit_id: "".to_string(),
         file_path: file_path.to_string(),
@@ -365,15 +361,8 @@ pub async fn push_initial_snapshot(
         ipfs: None,
     };
 
-    let wallet = user_wallet(context).await?;
     let params = serde_json::to_value(args)?;
-    let result = call(
-        &context.es_client,
-        wallet,
-        "deployNewSnapshot",
-        Some(params),
-    )
-    .await?;
+    let result = call(&cli, &wallet, "deployNewSnapshot", Some(params)).await?;
     log::debug!("deployNewSnapshot result: {:?}", result);
     Ok(())
 }
