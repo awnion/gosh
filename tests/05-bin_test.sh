@@ -16,7 +16,7 @@ wait_account_active $REPO_ADDR
 sleep 60
 
 # clone repo
-git clone gosh::vps23.ton.dev://$GOSH_ROOT_ADDR/$DAO1_NAME/$REPO_NAME
+git clone gosh::$NETWORK://$GOSH_ROOT_ADDR/$DAO1_NAME/$REPO_NAME
 
 cd $REPO_NAME
 
@@ -42,7 +42,7 @@ wait_set_commit $REPO_ADDR $BRANCH_NAME
 sleep 120
 
 cd ..
-git clone gosh::vps23.ton.dev://$GOSH_ROOT_ADDR/$DAO1_NAME/$REPO_NAME $REPO_NAME"-clone"
+git clone gosh::$NETWORK://$GOSH_ROOT_ADDR/$DAO1_NAME/$REPO_NAME $REPO_NAME"-clone"
 
 # check
 diff --brief --recursive $REPO_NAME $REPO_NAME"-clone" --exclude ".git" || exit 20
@@ -63,7 +63,7 @@ wait_set_commit $REPO_ADDR $BRANCH_NAME
 sleep 120
 
 cd ..
-git clone gosh::vps23.ton.dev://$GOSH_ROOT_ADDR/$DAO1_NAME/$REPO_NAME $REPO_NAME"-clone"
+git clone gosh::$NETWORK://$GOSH_ROOT_ADDR/$DAO1_NAME/$REPO_NAME $REPO_NAME"-clone"
 
 # check
 diff --brief --recursive $REPO_NAME $REPO_NAME"-clone" --exclude ".git" || exit 30
@@ -84,7 +84,7 @@ wait_set_commit $REPO_ADDR $BRANCH_NAME
 sleep 120
 
 cd ..
-git clone gosh::vps23.ton.dev://$GOSH_ROOT_ADDR/$DAO1_NAME/$REPO_NAME $REPO_NAME"-clone"
+git clone gosh::$NETWORK://$GOSH_ROOT_ADDR/$DAO1_NAME/$REPO_NAME $REPO_NAME"-clone"
 
 # check
 diff --brief --recursive $REPO_NAME $REPO_NAME"-clone" --exclude ".git" || exit 40
@@ -105,7 +105,7 @@ wait_set_commit $REPO_ADDR $BRANCH_NAME
 sleep 120
 
 cd ..
-git clone gosh::vps23.ton.dev://$GOSH_ROOT_ADDR/$DAO1_NAME/$REPO_NAME $REPO_NAME"-clone"
+git clone gosh::$NETWORK://$GOSH_ROOT_ADDR/$DAO1_NAME/$REPO_NAME $REPO_NAME"-clone"
 
 # check
 diff --brief --recursive $REPO_NAME $REPO_NAME"-clone" --exclude ".git" || exit 50
@@ -126,7 +126,7 @@ wait_set_commit $REPO_ADDR $BRANCH_NAME
 sleep 120
 
 cd ..
-git clone gosh::vps23.ton.dev://$GOSH_ROOT_ADDR/$DAO1_NAME/$REPO_NAME $REPO_NAME"-clone"
+git clone gosh::$NETWORK://$GOSH_ROOT_ADDR/$DAO1_NAME/$REPO_NAME $REPO_NAME"-clone"
 
 # check
 diff --brief --recursive $REPO_NAME $REPO_NAME"-clone" --exclude ".git" || exit 60
@@ -147,7 +147,7 @@ wait_set_commit $REPO_ADDR $BRANCH_NAME
 sleep 120
 
 cd ..
-git clone gosh::vps23.ton.dev://$GOSH_ROOT_ADDR/$DAO1_NAME/$REPO_NAME $REPO_NAME"-clone"
+git clone gosh::$NETWORK://$GOSH_ROOT_ADDR/$DAO1_NAME/$REPO_NAME $REPO_NAME"-clone"
 
 # check
 diff --brief --recursive $REPO_NAME $REPO_NAME"-clone" --exclude ".git" || exit 70
@@ -168,7 +168,7 @@ wait_set_commit $REPO_ADDR $BRANCH_NAME
 sleep 120
 
 cd ..
-git clone gosh::vps23.ton.dev://$GOSH_ROOT_ADDR/$DAO1_NAME/$REPO_NAME $REPO_NAME"-clone"
+git clone gosh::$NETWORK://$GOSH_ROOT_ADDR/$DAO1_NAME/$REPO_NAME $REPO_NAME"-clone"
 
 # check
 diff --brief --recursive $REPO_NAME $REPO_NAME"-clone" --exclude ".git" || exit 80
@@ -189,7 +189,7 @@ wait_set_commit $REPO_ADDR $BRANCH_NAME
 sleep 120
 
 cd ..
-git clone gosh::vps23.ton.dev://$GOSH_ROOT_ADDR/$DAO1_NAME/$REPO_NAME $REPO_NAME"-clone"
+git clone gosh::$NETWORK://$GOSH_ROOT_ADDR/$DAO1_NAME/$REPO_NAME $REPO_NAME"-clone"
 
 # check
 diff --brief --recursive $REPO_NAME $REPO_NAME"-clone" --exclude ".git" || exit 90

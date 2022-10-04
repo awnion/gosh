@@ -36,10 +36,11 @@ git checkout -b $BRANCH_NAME
 # create new file
 echo "foo" > foo-$CHANGE.txt
 
+echo "FIRST PUSH"
 # create commit and push
 git add .
 git commit -m "foo-$CHANGE"
-git push --set-upstream origin $BRANCH_NAME
+time git push --set-upstream origin $BRANCH_NAME -vvv
 
 wait_set_commit $REPO_ADDR $BRANCH_NAME
 sleep 120

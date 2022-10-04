@@ -3,14 +3,14 @@
 set -e 
 set -o pipefail
 
-export NETWORK=vps23.ton.dev
+export NETWORK=network.gosh.sh
 
 tonos-cli config --url $NETWORK
 
 # Should exist gosh root and Dao creater
 
-export GOSH_ROOT_ADDR=`cat ../contracts/gosh/GoshRoot.addr`
-export DAO_CREATOR_ADDR=`cat ../contracts/gosh/GoshDaoCreator.addr`
+export GOSH_ROOT_ADDR='0:457cd81c98f745217825d8c955973a5b0149babc27228b6e90658ffe7e84b01e'
+export DAO_CREATOR_ADDR='0:e22a2d41b431d771620bf97bf97a19c7a270344b630f2ad6867ca97471342845'
 
 export GOSH_ABI=../contracts/gosh/gosh.abi.json
 DAO_CREATOR_ABI=../contracts/gosh/daocreator.abi.json
@@ -19,7 +19,7 @@ DAO1_ABI=../contracts/gosh/goshdao.abi.json
 
 # create DAO
 
-export DAO1_NAME=dao-001
+export DAO1_NAME=dao-99900
 
 # generate dao1 keys
 SEED=`tonos-cli genphrase | grep -o '".*"' | tr -d '"'`

@@ -17,7 +17,7 @@ wait_account_active $REPO_ADDR
 sleep 60
 
 # clone repo
-git clone gosh::vps23.ton.dev://$GOSH_ROOT_ADDR/$DAO1_NAME/$REPO_NAME
+git clone gosh::$NETWORK://$GOSH_ROOT_ADDR/$DAO1_NAME/$REPO_NAME
 
 #check
 cd $REPO_NAME
@@ -61,7 +61,7 @@ wait_set_commit $REPO_ADDR $BRANCH_NAME
 sleep 120
 
 cd ..
-git clone gosh::vps23.ton.dev://$GOSH_ROOT_ADDR/$DAO1_NAME/$REPO_NAME $REPO_NAME"-clone"
+git clone gosh::$NETWORK://$GOSH_ROOT_ADDR/$DAO1_NAME/$REPO_NAME $REPO_NAME"-clone"
 
 # check
 DIFF_STATUS=1
