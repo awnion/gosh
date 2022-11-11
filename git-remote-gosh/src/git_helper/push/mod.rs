@@ -760,7 +760,7 @@ mod tests {
         let res = helper.push("main:main").await.unwrap();
     }
 
-    #[tokio::test(flavor = "multi_thread", worker_threads = 5)]
+    #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
     async fn test_push_big_normal_ref() {
         use opentelemetry::sdk::Resource;
         use opentelemetry::KeyValue;
@@ -797,7 +797,7 @@ mod tests {
         tracing_subscriber::registry().with(telemetry).init();
 
         {
-            let root = trace_span!("elper");
+            let root = trace_span!("test_push_big_normal_ref_inner");
             let _enter = root.enter();
 
             // TODO: need more smart test
@@ -848,6 +848,7 @@ mod tests {
 
             let res = helper.push("main:main").await.unwrap();
         }
-        global::shutdown_tracer_provider();
+        tokio::time::sleep(std::time::Duration::from_secs(20)).await;
+        // global::shutdown_tracer_provider();
     }
 }
