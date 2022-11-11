@@ -123,6 +123,8 @@ impl DeployDiff for Everscale {
             last,
         };
 
+        tokio::time::sleep(std::time::Duration::from_secs(10));
+        return Ok(());
         let result = self
             .call(wallet, "deployDiff", Some(serde_json::to_value(args)?))
             .await?;

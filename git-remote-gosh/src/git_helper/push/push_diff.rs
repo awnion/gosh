@@ -37,20 +37,20 @@ pub async fn push_diff<'a>(
         .user_wallet(&context.dao_addr, &context.remote.network)
         .await?;
     let mut repo_contract = context.blockchain.repo_contract().clone();
-    let snapshot_addr: BlockchainContractAddress = (Snapshot::calculate_address(
-        &context.blockchain.client(),
-        &mut repo_contract,
-        branch_name,
-        file_path,
-    ))
-    .await?;
+    // let snapshot_addr: BlockchainContractAddress = (Snapshot::calculate_address(
+    //     &context.blockchain.client(),
+    //     &mut repo_contract,
+    //     branch_name,
+    //     file_path,
+    // ))
+    // .await?;
+    let snapshot_addr = BlockchainContractAddress::new("0000000000000000000000000000000000000000");
 
     let blockchain = context.blockchain.clone();
     let original_snapshot_content = original_snapshot_content.clone();
     let diff = diff.to_owned();
     let new_snapshot_content = new_snapshot_content.clone();
     let ipfs_endpoint = context.config.ipfs_http_endpoint().to_string();
-    let es_client = context.blockchain.client().clone();
     let repo_name = context.remote.repo.clone();
     let commit_id = *commit_id;
     let branch_name = branch_name.to_owned();
@@ -68,7 +68,6 @@ pub async fn push_diff<'a>(
                 snapshot_addr.clone(),
                 wallet.clone(),
                 &ipfs_endpoint,
-                es_client.clone(),
                 &commit_id,
                 &branch_name,
                 &blob_id,
@@ -102,7 +101,6 @@ pub async fn inner_push_diff(
     snapshot_addr: BlockchainContractAddress,
     wallet: impl ContractRead + ContractInfo + Sync + 'static,
     ipfs_endpoint: &str,
-    es_client: EverClient,
     commit_id: &git_hash::ObjectId,
     branch_name: &str,
     blob_id: &git_hash::ObjectId,
@@ -118,86 +116,88 @@ pub async fn inner_push_diff(
     let diff = compress_zstd(diff, None)?;
     log::debug!("compressed to {} size", diff.len());
 
-    let ipfs_client = IpfsService::new(ipfs_endpoint);
-    let (patch, ipfs) = {
-        let mut is_going_to_ipfs = is_going_to_ipfs(&diff, new_snapshot_content);
-        if !is_going_to_ipfs {
-            // Ensure contract can accept this patch
-            let original_snapshot_content = compress_zstd(original_snapshot_content, None)?;
-            let data = serde_json::json!({
-                "state": hex::encode(original_snapshot_content),
-                "diff": hex::encode(&diff)
-            });
+    tokio::time::sleep(std::time::Duration::from_secs(10));
+    return Ok(());
+    // let ipfs_client = IpfsService::new(ipfs_endpoint);
+    // let (patch, ipfs) = {
+    //     let mut is_going_to_ipfs = is_going_to_ipfs(&diff, new_snapshot_content);
+    //     if !is_going_to_ipfs {
+    //         // Ensure contract can accept this patch
+    //         let original_snapshot_content = compress_zstd(original_snapshot_content, None)?;
+    //         let data = serde_json::json!({
+    //             "state": hex::encode(original_snapshot_content),
+    //             "diff": hex::encode(&diff)
+    //         });
 
-            match wallet
-                .read_state::<GetDiffResultResult>(&es_client, "getDiffResult", Some(data))
-                .await
-            {
-                Ok(apply_patch_result) => {
-                    if apply_patch_result.hex_encoded_compressed_content.is_none() {
-                        is_going_to_ipfs = true;
-                    }
-                }
-                Err(apply_patch_result_error) => {
-                    is_going_to_ipfs = apply_patch_result_error
-                        .to_string()
-                        .contains("Contract execution was terminated with error: invalid opcode");
-                }
-            }
-        }
-        if is_going_to_ipfs {
-            log::debug!("inner_push_diff->save_data_to_ipfs");
-            let ipfs = Some(
-                save_data_to_ipfs(&ipfs_client, new_snapshot_content)
-                    .await
-                    .map_err(|e| {
-                        log::debug!("save_data_to_ipfs error: {}", e);
-                        e
-                    })?,
-            );
-            (None, ipfs)
-        } else {
-            (Some(hex::encode(diff)), None)
-        }
-    };
-    let content_sha256 = {
-        if ipfs.is_some() {
-            format!("0x{}", sha256::digest(&**new_snapshot_content))
-        } else {
-            format!("0x{}", tvm_hash(&es_client, new_snapshot_content).await?)
-        }
-    };
+    //         match wallet
+    //             .read_state::<GetDiffResultResult>(&es_client, "getDiffResult", Some(data))
+    //             .await
+    //         {
+    //             Ok(apply_patch_result) => {
+    //                 if apply_patch_result.hex_encoded_compressed_content.is_none() {
+    //                     is_going_to_ipfs = true;
+    //                 }
+    //             }
+    //             Err(apply_patch_result_error) => {
+    //                 is_going_to_ipfs = apply_patch_result_error
+    //                     .to_string()
+    //                     .contains("Contract execution was terminated with error: invalid opcode");
+    //             }
+    //         }
+    //     }
+    //     if is_going_to_ipfs {
+    //         log::debug!("inner_push_diff->save_data_to_ipfs");
+    //         let ipfs = Some(
+    //             save_data_to_ipfs(&ipfs_client, new_snapshot_content)
+    //                 .await
+    //                 .map_err(|e| {
+    //                     log::debug!("save_data_to_ipfs error: {}", e);
+    //                     e
+    //                 })?,
+    //         );
+    //         (None, ipfs)
+    //     } else {
+    //         (Some(hex::encode(diff)), None)
+    //     }
+    // };
+    // let content_sha256 = {
+    //     if ipfs.is_some() {
+    //         format!("0x{}", sha256::digest(&**new_snapshot_content))
+    //     } else {
+    //         format!("0x{}", tvm_hash(&es_client, new_snapshot_content).await?)
+    //     }
+    // };
 
-    let diff = Diff {
-        snapshot_addr,
-        commit_id: commit_id.to_string(),
-        patch,
-        ipfs,
-        sha1: blob_id.to_string(),
-        sha256: content_sha256,
-    };
+    // let diff = Diff {
+    //     snapshot_addr,
+    //     commit_id: commit_id.to_string(),
+    //     patch,
+    //     ipfs,
+    //     sha1: blob_id.to_string(),
+    //     sha256: content_sha256,
+    // };
 
-    if diff.ipfs.is_some() {
-        log::debug!("push_diff: {:?}", diff);
-    } else {
-        log::trace!("push_diff: {:?}", diff);
-    }
-    let diffs: Vec<Diff> = vec![diff];
+    // if diff.ipfs.is_some() {
+    //     log::debug!("push_diff: {:?}", diff);
+    // } else {
+    //     log::trace!("push_diff: {:?}", diff);
+    // }
+    // let diffs: Vec<Diff> = vec![diff];
 
-    blockchain
-        .deploy_diff(
-            &wallet,
-            repo_name,
-            branch_name.to_string(),
-            last_commit_id.to_string(),
-            diffs,
-            diff_coordinate.index_of_parallel_thread,
-            diff_coordinate.order_of_diff_in_the_parallel_thread,
-            is_last,
-        )
-        .await?;
+    // blockchain
+    //     .deploy_diff(
+    //         &wallet,
+    //         repo_name,
+    //         branch_name.to_string(),
+    //         last_commit_id.to_string(),
+    //         diffs,
+    //         diff_coordinate.index_of_parallel_thread,
+    //         diff_coordinate.order_of_diff_in_the_parallel_thread,
+    //         is_last,
+    //     )
+    //     .await?;
 
-    Ok(())
+    // Ok(())
 }
 
 pub fn is_going_to_ipfs(diff: &[u8], new_content: &[u8]) -> bool {
@@ -342,4 +342,131 @@ pub async fn push_initial_snapshot(
         );
         result
     }))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use git_hash::ObjectId;
+    use git_repository::credentials::helper;
+    use opentelemetry::trace::FutureExt;
+
+    use crate::{
+        blockchain::{
+            self, contract::GoshContract, service::tests::MockEverscale, BlockchainContractAddress,
+        },
+        git_helper::{test_utils::setup_repo, tests::setup_test_helper},
+    };
+
+    #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+    async fn test_push_big_diff() {
+        use opentelemetry::sdk::Resource;
+        use opentelemetry::KeyValue;
+
+        use std::str::FromStr;
+
+        use tracing_subscriber::layer::SubscriberExt;
+        use tracing_subscriber::util::SubscriberInitExt;
+        use tracing_subscriber::EnvFilter;
+
+        let tracer = opentelemetry_otlp::new_pipeline()
+            .tracing()
+            .with_exporter(opentelemetry_otlp::new_exporter().tonic())
+            .with_trace_config(
+                opentelemetry::sdk::trace::config()
+                    .with_sampler(opentelemetry::sdk::trace::Sampler::AlwaysOn)
+                    .with_id_generator(opentelemetry::sdk::trace::RandomIdGenerator::default())
+                    .with_max_events_per_span(64)
+                    .with_max_attributes_per_span(16)
+                    .with_max_events_per_span(16)
+                    .with_resource(Resource::new(vec![KeyValue::new(
+                        opentelemetry_semantic_conventions::resource::SERVICE_NAME,
+                        "test_git_helper",
+                    )])),
+            )
+            .install_batch(opentelemetry::runtime::Tokio)
+            .unwrap();
+
+        let telemetry = tracing_opentelemetry::layer()
+            .with_location(true)
+            .with_threads(true)
+            .with_tracer(tracer);
+
+        tracing_subscriber::registry().with(telemetry).init();
+
+        {
+            let root = trace_span!("test_push_big_normal_ref_inner");
+            let _enter = root.enter();
+
+            let repo = setup_repo("test_push_diff", "tests/fixtures/make_remote_repo.sh").unwrap();
+
+            let mut mock_blockchain = MockEverscale::new();
+            mock_blockchain
+                .expect_is_branch_protected()
+                .returning(|_, _| Ok(false));
+
+            mock_blockchain.expect_remote_rev_parse().returning(|_, _| {
+                Ok(Some((
+                    blockchain::BlockchainContractAddress::new("test"),
+                    "test".to_owned(),
+                )))
+            });
+
+            mock_blockchain
+                .expect_notify_commit()
+                .returning(|_, _, _, _, _, _| Ok(()));
+
+            mock_blockchain.expect_user_wallet().returning(|_, _| {
+                Ok(GoshContract::new(
+                    BlockchainContractAddress::new("0000000000000000000000000000000000000000"),
+                    crate::abi::REPO,
+                ))
+            });
+
+            let repo_contract = GoshContract::new(
+                BlockchainContractAddress::new("0000000000000000000000000000000000000000"),
+                crate::abi::REPO,
+            );
+
+            mock_blockchain
+                .expect_repo_contract()
+                .return_const(repo_contract);
+
+            mock_blockchain
+                .expect_clone()
+                .returning(|| MockEverscale::new());
+
+            // mock_blockchain.expect_client().return_const();
+
+            let mut helper = setup_test_helper(
+                json!({
+                    "ipfs": "foo.endpoint"
+                }),
+                "gosh://1/2/3",
+                repo,
+                mock_blockchain,
+            );
+
+            push_diff(
+                &mut helper,
+                &ObjectId::from_str("0000000000000000000000000000000000000000").unwrap(),
+                "main",
+                &ObjectId::from_str("0000000000000000000000000000000000000000").unwrap(),
+                "file_path",
+                &PushDiffCoordinate {
+                    index_of_parallel_thread: 1,
+                    order_of_diff_in_the_parallel_thread: 1,
+                },
+                &ObjectId::from_str("0000000000000000000000000000000000000000").unwrap(),
+                true,
+                &vec![0u8],
+                &vec![0u8],
+                &vec![0u8],
+            )
+            .await;
+        }
+        tokio::time::sleep(std::time::Duration::from_secs(20)).await;
+        // global::shutdown_tracer_provider();
+    }
 }
