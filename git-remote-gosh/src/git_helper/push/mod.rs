@@ -381,6 +381,7 @@ where
                     let object_kind = self.local_repository().find_object(object_id)?.kind;
                     match object_kind {
                         git_object::Kind::Commit => {
+                            log::debug!("git_object kind = Commit");
                             // TODO: consider extract to a function
                             let mut buffer: Vec<u8> = Vec::new();
                             let commit = self
@@ -578,11 +579,14 @@ mod tests {
             test_utils::{self, setup_repo},
             tests::setup_test_helper,
         },
-        logger::GitHelperLogger,
+        logger::{telemetry, GitHelperLogger},
     };
     use async_trait::async_trait;
     use log4rs::encode::json;
+    use opentelemetry::{global, sdk::Resource, KeyValue};
+    use opentelemetry_otlp::WithExportConfig;
     use std::fs;
+    use tracing_subscriber::{EnvFilter, Layer};
 
     #[test]
     fn ensure_calc_left_dist_correctly() {
@@ -754,5 +758,96 @@ mod tests {
         );
 
         let res = helper.push("main:main").await.unwrap();
+    }
+
+    #[tokio::test(flavor = "multi_thread", worker_threads = 5)]
+    async fn test_push_big_normal_ref() {
+        use opentelemetry::sdk::Resource;
+        use opentelemetry::KeyValue;
+
+        use std::str::FromStr;
+
+        use tracing_subscriber::layer::SubscriberExt;
+        use tracing_subscriber::util::SubscriberInitExt;
+        use tracing_subscriber::EnvFilter;
+
+        let tracer = opentelemetry_otlp::new_pipeline()
+            .tracing()
+            .with_exporter(opentelemetry_otlp::new_exporter().tonic())
+            .with_trace_config(
+                opentelemetry::sdk::trace::config()
+                    .with_sampler(opentelemetry::sdk::trace::Sampler::AlwaysOn)
+                    .with_id_generator(opentelemetry::sdk::trace::RandomIdGenerator::default())
+                    .with_max_events_per_span(64)
+                    .with_max_attributes_per_span(16)
+                    .with_max_events_per_span(16)
+                    .with_resource(Resource::new(vec![KeyValue::new(
+                        opentelemetry_semantic_conventions::resource::SERVICE_NAME,
+                        "test_git_helper",
+                    )])),
+            )
+            .install_batch(opentelemetry::runtime::Tokio)
+            .unwrap();
+
+        let telemetry = tracing_opentelemetry::layer()
+            .with_location(true)
+            .with_threads(true)
+            .with_tracer(tracer);
+
+        tracing_subscriber::registry().with(telemetry).init();
+
+        {
+            let root = trace_span!("elper");
+            let _enter = root.enter();
+
+            // TODO: need more smart test
+            let repo =
+                setup_repo("test_push_normal", "tests/fixtures/make_big_remote_repo.sh").unwrap();
+
+            let mut mock_blockchain = MockEverscale::new();
+            mock_blockchain
+                .expect_is_branch_protected()
+                .returning(|_, _| Ok(false));
+
+            mock_blockchain.expect_remote_rev_parse().returning(|_, _| {
+                Ok(Some((
+                    blockchain::BlockchainContractAddress::new("test"),
+                    "test".to_owned(),
+                )))
+            });
+
+            // TODO: fix bad object stderr from git command
+            let sha = repo.head_commit().unwrap().id.to_string();
+            mock_blockchain
+                .expect_get_commit_by_addr()
+                .returning(move |_| {
+                    Ok(Some(
+                        serde_json::from_value(json! ({
+                            "repo": "",
+                            "branch": "main",
+                            "sha": sha,
+                            "parents": [],
+                            "content": "",
+                        }))
+                        .unwrap(),
+                    ))
+                });
+
+            mock_blockchain
+                .expect_notify_commit()
+                .returning(|_, _, _, _, _, _| Ok(()));
+
+            let mut helper = setup_test_helper(
+                json!({
+                    "ipfs": "foo.endpoint"
+                }),
+                "gosh://1/2/3",
+                repo,
+                mock_blockchain,
+            );
+
+            let res = helper.push("main:main").await.unwrap();
+        }
+        global::shutdown_tracer_provider();
     }
 }

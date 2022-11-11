@@ -21,8 +21,8 @@ pub fn setup_repo(name: &str, script_path: &str) -> anyhow::Result<Repository> {
         .current_dir(&dir)
         .output()?;
 
-    eprintln!("stdout: \n{}", output.stdout.to_str_lossy());
-    eprintln!("stderr: \n{}", output.stderr.to_str_lossy());
+    // eprintln!("stdout: \n{}", output.stdout.to_str_lossy());
+    // eprintln!("stderr: \n{}", output.stderr.to_str_lossy());
 
     let repo = git_repository::open(&dir)?;
     eprintln!("Repo: {:?}", repo);
