@@ -116,7 +116,8 @@ pub async fn inner_push_diff(
     let diff = compress_zstd(diff, None)?;
     log::debug!("compressed to {} size", diff.len());
 
-    tokio::time::sleep(std::time::Duration::from_secs(10));
+    // tokio::time::sleep(std::time::Duration::from_secs(10)).await;
+    std::thread::sleep(std::time::Duration::from_secs(10));
     return Ok(());
     // let ipfs_client = IpfsService::new(ipfs_endpoint);
     // let (patch, ipfs) = {
@@ -348,6 +349,7 @@ pub async fn push_initial_snapshot(
 mod tests {
     use super::*;
 
+    use futures::{stream::FuturesUnordered, StreamExt};
     use git_hash::ObjectId;
     use git_repository::credentials::helper;
     use opentelemetry::trace::FutureExt;
@@ -359,7 +361,7 @@ mod tests {
         git_helper::{test_utils::setup_repo, tests::setup_test_helper},
     };
 
-    #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+    #[tokio::test(flavor = "multi_thread", worker_threads = 5)]
     async fn test_push_big_diff() {
         use opentelemetry::sdk::Resource;
         use opentelemetry::KeyValue;
@@ -448,23 +450,48 @@ mod tests {
                 mock_blockchain,
             );
 
-            push_diff(
-                &mut helper,
-                &ObjectId::from_str("0000000000000000000000000000000000000000").unwrap(),
-                "main",
-                &ObjectId::from_str("0000000000000000000000000000000000000000").unwrap(),
-                "file_path",
-                &PushDiffCoordinate {
-                    index_of_parallel_thread: 1,
-                    order_of_diff_in_the_parallel_thread: 1,
-                },
-                &ObjectId::from_str("0000000000000000000000000000000000000000").unwrap(),
-                true,
-                &vec![0u8],
-                &vec![0u8],
-                &vec![0u8],
-            )
-            .await;
+            let mut pushed_blobs: FuturesUnordered<tokio::task::JoinHandle<anyhow::Result<()>>> =
+                FuturesUnordered::new();
+
+            trace!("Time start");
+            for i in 0..10 {
+                trace!("{i}");
+                pushed_blobs.push(
+                    push_diff(
+                        &mut helper,
+                        &ObjectId::from_str("0000000000000000000000000000000000000000").unwrap(),
+                        "main",
+                        &ObjectId::from_str("0000000000000000000000000000000000000000").unwrap(),
+                        "file_path",
+                        &PushDiffCoordinate {
+                            index_of_parallel_thread: 1,
+                            order_of_diff_in_the_parallel_thread: 1,
+                        },
+                        &ObjectId::from_str("0000000000000000000000000000000000000000").unwrap(),
+                        true,
+                        &vec![0u8],
+                        &vec![0u8],
+                        &vec![0u8],
+                    )
+                    .await
+                    .unwrap(),
+                );
+            }
+
+            while let Some(finished_task) = pushed_blobs.next().await {
+                match finished_task {
+                    Err(e) => {
+                        panic!("diffs joih-handler: {}", e);
+                    }
+                    Ok(Err(e)) => {
+                        panic!("diffs inner: {}", e);
+                    }
+                    Ok(Ok(_)) => {
+                        trace!("OK OK");
+                    }
+                }
+            }
+            trace!("Time end");
         }
         tokio::time::sleep(std::time::Duration::from_secs(20)).await;
         // global::shutdown_tracer_provider();
