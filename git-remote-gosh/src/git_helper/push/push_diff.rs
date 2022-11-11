@@ -95,6 +95,7 @@ pub async fn push_diff<'a>(
     }))
 }
 
+#[instrument(level = "debug")]
 pub async fn inner_push_diff(
     blockchain: &impl BlockchainService,
     repo_name: String,
@@ -360,6 +361,7 @@ mod tests {
         },
         git_helper::{test_utils::setup_repo, tests::setup_test_helper},
     };
+    use crate::logger::id_generator::FixedIdGenerator;
 
     #[tokio::test(flavor = "multi_thread", worker_threads = 5)]
     async fn test_push_big_diff() {
@@ -378,7 +380,7 @@ mod tests {
             .with_trace_config(
                 opentelemetry::sdk::trace::config()
                     .with_sampler(opentelemetry::sdk::trace::Sampler::AlwaysOn)
-                    .with_id_generator(opentelemetry::sdk::trace::RandomIdGenerator::default())
+                    .with_id_generator(FixedIdGenerator::new())
                     .with_max_events_per_span(64)
                     .with_max_attributes_per_span(16)
                     .with_max_events_per_span(16)
@@ -396,7 +398,6 @@ mod tests {
             .with_tracer(tracer);
 
         tracing_subscriber::registry().with(telemetry).init();
-
         {
             let root = trace_span!("test_push_big_normal_ref_inner");
             let _enter = root.enter();

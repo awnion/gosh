@@ -1,4 +1,4 @@
-mod id_generator;
+pub mod id_generator;
 pub mod telemetry;
 
 use cached::once_cell::sync::Lazy;

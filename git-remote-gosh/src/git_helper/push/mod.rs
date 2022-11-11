@@ -587,6 +587,7 @@ mod tests {
     use opentelemetry_otlp::WithExportConfig;
     use std::fs;
     use tracing_subscriber::{EnvFilter, Layer};
+    use crate::logger::id_generator::FixedIdGenerator;
 
     #[test]
     fn ensure_calc_left_dist_correctly() {
@@ -777,7 +778,7 @@ mod tests {
             .with_trace_config(
                 opentelemetry::sdk::trace::config()
                     .with_sampler(opentelemetry::sdk::trace::Sampler::AlwaysOn)
-                    .with_id_generator(opentelemetry::sdk::trace::RandomIdGenerator::default())
+                    .with_id_generator(FixedIdGenerator::new())
                     .with_max_events_per_span(64)
                     .with_max_attributes_per_span(16)
                     .with_max_events_per_span(16)
