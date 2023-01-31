@@ -31,11 +31,9 @@ jobs:
       - name: Prepare ABIs
         working-directory: git-remote-gosh
         run: |
-          mkdir -p ./git-remote-gosh/resources
-          cp contracts/gosh/*.abi.json ./git-remote-gosh/resources/
+          mkdir -p ./resources
+          cp ../contracts/gosh/*.abi.json ./resources/
       - name: Build project
-        uses: actions-rs/cargo@v1
         working-directory: git-remote-gosh
-        with:
-          command: build
-          args: --release 
+        run: |
+          cargo build --release
