@@ -8,8 +8,8 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: ubuntu-latest
-          - os: macos-latest
+          - os: ubuntu-20.04
+          - os: macos-12
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
