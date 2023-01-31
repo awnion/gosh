@@ -19,7 +19,7 @@ jobs:
 
   build-and-release:
     name: Build and Release
-    needs: create_release
+    needs: create-gh-release
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
