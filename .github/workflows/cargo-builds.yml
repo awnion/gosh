@@ -14,6 +14,12 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: 1.66.0
+          override: true
       - name: run if Ubuntu only
         if: startsWith(matrix.os,'ubuntu')
         run: |
@@ -22,9 +28,13 @@ jobs:
         if: startsWith(matrix.os,'macos')
         run: |
           brew install protobuf
-      - name: Build project
+      - name: Prepare ABIs
         working-directory: git-remote-gosh
         run: |
           mkdir -p ./resources
           cp ../contracts/gosh/*.abi.json ./resources/
-          cargo build --release
+      - name: Build project
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --release 
