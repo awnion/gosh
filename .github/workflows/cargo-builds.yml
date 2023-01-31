@@ -34,8 +34,8 @@ jobs:
           mkdir -p ./git-remote-gosh/resources
           cp contracts/gosh/*.abi.json ./git-remote-gosh/resources/
       - name: Build project
-        working-directory: git-remote-gosh
         uses: actions-rs/cargo@v1
+        working-directory: git-remote-gosh
         with:
           command: build
           args: --release 
