@@ -17,6 +17,10 @@ jobs:
         if: startsWith(matrix.os,'ubuntu')
         run: |
           sudo apt install -y protobuf-compiler
+      - name: run if MacOS only
+        if: startsWith(matrix.os,'macos')
+        run: |
+          brew install protobuf
       - name: Build project
         working-directory: git-remote-gosh
         run: |
