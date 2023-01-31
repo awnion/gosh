@@ -38,5 +38,6 @@ jobs:
           mkdir -p ./resources
           cp ../contracts/gosh/*.abi.json ./resources/
       - name: Build project
+        working-directory: git-remote-gosh
         run: |
           cargo build --release
