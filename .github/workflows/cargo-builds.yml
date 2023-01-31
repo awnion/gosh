@@ -19,4 +19,7 @@ jobs:
           sudo apt install -y protobuf-compiler
       - name: Build project
         working-directory: git-remote-gosh
-        run: cargo build --release
+        run: |
+          mkdir -p ./resources
+	        cp ../contracts/gosh/*.abi.json ./resources/
+          cargo build --release
