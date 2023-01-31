@@ -2,20 +2,34 @@ name: GitHub Actions Demo
 on: [push]
 
 jobs:
-
+  create-gh-release:
+    name: Create release
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+    steps:
+      - name: Create release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
 
   build-and-release:
     name: Build and Release
+    needs: create_release
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         include:
           - os: windows-2019
-            bin: sad
+            bin: git-remote-gosh-windows-amd64
           - os: ubuntu-20.04
-            bin: asd
+            bin: git-remote-gosh-linux-amd64
           - os: macos-12
-            bin: sad
+            bin: git-remote-gosh-darwin-amd64
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -46,8 +60,12 @@ jobs:
         working-directory: git-remote-gosh
         run: |
           cargo build --release
-          ls bin
-          ls target
-          ls target/release
-          ls target/release/git-remote-gosh
-          cat bin/run.sh
+      - name: Upload Artifacts
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create_release.outputs.upload_url }}
+          asset_path: ./git-remote-gosh/bin/git-remote-gosh
+          asset_name: ${{ matrix.bin_name }}
+          asset_content_type: application/octet-stream
