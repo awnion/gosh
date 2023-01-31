@@ -28,13 +28,15 @@ jobs:
         if: startsWith(matrix.os,'macos')
         run: |
           brew install protobuf
+      - name: run if Windows only
+        if: startsWith(matrix.os,'windows')
+        run: |
+          choco install protoc
       - name: Prepare ABIs
         working-directory: git-remote-gosh
         run: |
           mkdir -p ./resources
           cp ../contracts/gosh/*.abi.json ./resources/
       - name: Build project
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --release
+        run: |
+          cargo build --release
