@@ -2,15 +2,21 @@ name: GitHub Actions Demo
 on: [push]
 
 jobs:
-  release:
+
+
+  build-and-release:
     name: Build and Release
+    needs: create_release
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         include:
           - os: windows-2019
+            bin: sad
           - os: ubuntu-20.04
+            bin: asd
           - os: macos-12
+            bin: sad
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -41,9 +47,8 @@ jobs:
         working-directory: git-remote-gosh
         run: |
           cargo build --release
-          ls -la 
+          ls -la bin
+          cat bin/run.sh
           ls -la target
           ls -la target/release
-          ls -lR
           ls -la target/release/git-remote-gosh
-          ls -lR target/release/git-remote-gosh
