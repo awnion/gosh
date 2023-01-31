@@ -6,7 +6,6 @@ jobs:
 
   build-and-release:
     name: Build and Release
-    needs: create_release
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -47,8 +46,8 @@ jobs:
         working-directory: git-remote-gosh
         run: |
           cargo build --release
-          ls -la bin
+          ls bin
+          ls target
+          ls target/release
+          ls target/release/git-remote-gosh
           cat bin/run.sh
-          ls -la target
-          ls -la target/release
-          ls -la target/release/git-remote-gosh
