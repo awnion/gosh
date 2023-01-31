@@ -13,6 +13,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+      - name: run if Ubuntu only
+        if: startsWith(matrix.os,'ubuntu')
+        run: |
+          apt install -y protobuf-compiler
       - name: Build project
         working-directory: git-remote-gosh
         run: cargo build --release
