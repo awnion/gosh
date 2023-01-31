@@ -65,7 +65,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ needs.create_release.outputs.upload_url }}
+          upload_url: ${{ needs.create-gh-release.outputs.upload_url }}
           asset_path: ./git-remote-gosh/bin/git-remote-gosh
           asset_name: ${{ matrix.bin_name }}
           asset_content_type: application/octet-stream
