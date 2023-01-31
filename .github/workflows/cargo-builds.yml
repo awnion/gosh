@@ -16,7 +16,7 @@ jobs:
       - name: run if Ubuntu only
         if: startsWith(matrix.os,'ubuntu')
         run: |
-          apt install -y protobuf-compiler
+          sudo apt install -y protobuf-compiler
       - name: Build project
         working-directory: git-remote-gosh
         run: cargo build --release
