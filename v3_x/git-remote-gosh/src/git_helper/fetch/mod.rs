@@ -205,7 +205,7 @@ where
                 tracing::debug!("Received commit {}", id);
                 let mut branches = HashSet::new();
                 branches.insert(onchain_commit.branch);
-                for parent in onchain_commit.parents {
+                for parent in onchain_commit.parents.clone() {
                     let parent = BlockchainContractAddress::new(parent.address);
                     let parent_contract = GoshContract::new(&parent, gosh_abi::COMMIT);
                     let branch: GetNameBranchResult = parent_contract.run_static(
@@ -225,14 +225,15 @@ where
                 tree_obj_queue.push_back(to_load);
                 if onchain_commit.initupgrade {
                     if !obj.parents.is_empty() {
-                        next_commit_of_prev_version = Some(obj.parents[0].clone());
+                        let prev_version = onchain_commit.parents[0].clone().version;
+                        next_commit_of_prev_version = Some((id, prev_version));
                     }
                 } else {
                     for parent_id in &obj.parents {
                         commits_queue.push_back(*parent_id);
                     }
+                    dangling_commits.push(obj);
                 }
-                dangling_commits.push(obj);
                 continue;
             }
 
@@ -246,7 +247,8 @@ where
             break;
         }
         if next_commit_of_prev_version.is_some() {
-            return Err(format_err!("Was trying to call getCommit. SHA=\"{}\"", next_commit_of_prev_version.unwrap()))
+            let (sha, version) = next_commit_of_prev_version.unwrap();
+            return Err(format_err!("Was trying to call getCommit. SHA=\"{sha},{version}\""));
         }
 
         Ok(())
