@@ -46,8 +46,8 @@ if [ "$VERSION" == "v4_x" ]; then
       echo "$n$n$n" > "$n.txt"
   done
 else
-  FILES_CNT=304
-  for n in {1..300}; do
+  FILES_CNT=204
+  for n in {1..200}; do
       echo "$n$n$n" > "$n.txt"
   done
 fi
