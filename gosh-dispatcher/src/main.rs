@@ -31,6 +31,7 @@ const INI_LOCATION: &str = "~/.gosh/dispatcher.ini";
 const INI_LOCATION: &str = "~\\.gosh\\dispatcher.ini";
 
 const SHIPPING_INI_PATH: &str = "dispatcher.ini";
+const DEB_PACKAGE_INI_PATH: &str = "/usr/local/share/git-remote-gosh/dispatcher.ini";
 
 const GIT_HELPER_ENV_TRACE_VERBOSITY: &str = "GOSH_TRACE";
 static DISPATCHER_ENDL: &str = "endl";
@@ -259,7 +260,11 @@ fn get_ini_path() -> anyhow::Result<String> {
         if Path::new(&shellexpand::tilde(INI_LOCATION).to_string()).exists() {
             INI_LOCATION.to_string()
         } else {
-            SHIPPING_INI_PATH.to_string()
+            if Path::new(DEB_PACKAGE_INI_PATH).exists() {
+                DEB_PACKAGE_INI_PATH.to_string()
+            } else {
+                SHIPPING_INI_PATH.to_string()
+            }
         }
     });
     let path_str = shellexpand::tilde(&path_str).into_owned();
