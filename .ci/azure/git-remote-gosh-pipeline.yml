@@ -106,7 +106,7 @@ steps:
     #sudo ln -s /usr/include/x86_64-linux-gnu/bits /usr/include/
     #sudo ln -s /usr/include/x86_64-linux-gnu/bits /usr/include/
     #sudo cp -r /usr/include/x86_64-linux-gnu/* /usr/include/
-    bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)"
+    sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)"
     sudo apt install -y clang build-essential g++-x86-64-linux-gnu libc6-dev-amd64-cross g++-aarch64-linux-gnu libc6-dev-arm64-cross gcc-aarch64-linux-gnu
     rustup target add aarch64-unknown-linux-gnu
     dpkg -S libc-header-start.h
