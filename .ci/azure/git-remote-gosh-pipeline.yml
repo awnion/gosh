@@ -102,16 +102,16 @@ steps:
 - script: |
     set -ex
     sudo apt update -y
-    dpkg -S libc-header-start.h
-    rustc --print sysroot
-    sudo ls -la /home/vsts/.rustup/toolchains/1.70.0-x86_64-unknown-linux-gnu/*
-    sudo ls -la /home/vsts/.rustup/toolchains/
     #sudo mkdir /usr/include/bits/
     #sudo ln -s /usr/include/x86_64-linux-gnu/bits /usr/include/
     #sudo ln -s /usr/include/x86_64-linux-gnu/bits /usr/include/
     #sudo cp -r /usr/include/x86_64-linux-gnu/* /usr/include/
     sudo apt install -y build-essential g++-x86-64-linux-gnu libc6-dev-amd64-cross g++-aarch64-linux-gnu libc6-dev-arm64-cross gcc-aarch64-linux-gnu
-    rustup target add aarch64-unknown-linux-gnu 
+    rustup target add aarch64-unknown-linux-gnu
+    dpkg -S libc-header-start.h
+    rustc --print sysroot
+    sudo ls -la /home/vsts/.rustup/toolchains/1.70.0-x86_64-unknown-linux-gnu
+    sudo ls -la /home/vsts/.rustup/toolchains/
     cargo build --release --target aarch64-unknown-linux-gnu
   env:
     CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER: x86_64-linux-gnu-gcc
