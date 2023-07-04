@@ -104,6 +104,7 @@ steps:
     sudo apt update -y
     dpkg -S libc-header-start.h
     rustc --print sysroot
+    sudo ls -la
     #sudo mkdir /usr/include/bits/
     #sudo ln -s /usr/include/x86_64-linux-gnu/bits /usr/include/
     #sudo ln -s /usr/include/x86_64-linux-gnu/bits /usr/include/
