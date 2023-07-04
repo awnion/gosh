@@ -103,8 +103,10 @@ steps:
     set -ex
     sudo apt update -y
     dpkg -S libc-header-start.h
-    sudo mkdir /usr/include/bits/
-    sudo ln -s /usr/include/x86_64-linux-gnu/bits/libc-header-start.h /usr/include/bits/libc-header-start.h
+    #sudo mkdir /usr/include/bits/
+    #sudo ln -s /usr/include/x86_64-linux-gnu/bits /usr/include/
+    #sudo ln -s /usr/include/x86_64-linux-gnu/bits /usr/include/
+    sudo cp -r /usr/include/x86_64-linux-gnu/* /usr/include/
     sudo apt install -y build-essential g++-x86-64-linux-gnu libc6-dev-amd64-cross g++-aarch64-linux-gnu libc6-dev-arm64-cross gcc-aarch64-linux-gnu
     rustup target add aarch64-unknown-linux-gnu 
     cargo build --release --target aarch64-unknown-linux-gnu
