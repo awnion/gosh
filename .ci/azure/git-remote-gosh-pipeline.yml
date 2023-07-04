@@ -104,7 +104,8 @@ steps:
     sudo apt update -y
     dpkg -S libc-header-start.h
     rustc --print sysroot
-    sudo ls -la
+    sudo ls -la /home/vsts/.rustup/toolchains/1.70.0-x86_64-unknown-linux-gnu/*
+    sudo ls -la /home/vsts/.rustup/toolchains/
     #sudo mkdir /usr/include/bits/
     #sudo ln -s /usr/include/x86_64-linux-gnu/bits /usr/include/
     #sudo ln -s /usr/include/x86_64-linux-gnu/bits /usr/include/
