@@ -1,13 +1,19 @@
 use super::GitHelper;
+
 use crate::{
     blockchain,
     blockchain::{
         calculate_contract_address, get_contract_code, tag::load::TagObject,
-        BlockchainContractAddress, BlockchainService, GetContractCodeResult,
+        BlockchainContractAddress, BlockchainService, GetContractCodeResult, user_wallet::WalletError,
     },
 };
 use git_odb::{Find, Write};
-use tokio::sync::Mutex;
+use tokio::{sync::Mutex, task::JoinSet};
+use tokio_retry::{
+    RetryIf,
+    strategy::FibonacciBackoff, Retry,
+};
+use tracing::Instrument;
 
 use crate::blockchain::contract::GoshContract;
 use crate::blockchain::{gosh_abi, GetNameBranchResult};
@@ -17,12 +23,20 @@ use std::{
     collections::{HashMap, HashSet, VecDeque},
     io::Write as IoWrite,
     str::FromStr,
-    sync::Arc,
+    sync::{Arc, atomic::AtomicU64},
 };
 
 use git_object::tree::EntryMode;
 
+mod process_tree;
 mod restore_blobs;
+
+// #[derive(Debug)]
+// struct TreeObjectsQueueItem {
+//     pub path: String,
+//     pub oid: git_hash::ObjectId,
+//     pub branches: HashSet<String>,
+// }
 
 impl<Blockchain> GitHelper<Blockchain>
 where
@@ -51,7 +65,7 @@ where
         let store = &self.local_repository().objects;
         // It should refresh once even if the refresh mode is never, just to initialize the index
         //store.refresh_never();
-        let buf = serialize_tree(obj).map_err(|e| {
+        let buf = process_tree::serialize_tree(obj).map_err(|e| {
             tracing::error!("Serialization of git tree object failed with: {}", e);
             e
         })?;
@@ -90,10 +104,10 @@ where
             anyhow::bail!("Error. Can not fetch an object without refs/heads/ prefix");
         }
         tracing::info!("Fetching sha: {} name: {}", sha, name);
-        let branch: &str = {
+        let branch = {
             let mut iter = name.chars();
             iter.by_ref().nth(REFS_HEAD_PREFIX.len() - 1);
-            iter.as_str()
+            iter.as_str().to_owned()
         };
         tracing::debug!("Calculate branch: {}", branch);
 
@@ -129,14 +143,8 @@ where
         }
 
         let mut commits_queue = VecDeque::<git_hash::ObjectId>::new();
-        #[derive(Debug)]
-        struct TreeObjectsQueueItem {
-            pub path: String,
-            pub oid: git_hash::ObjectId,
-            pub branches: HashSet<String>,
-        }
-        let mut tree_obj_queue = VecDeque::<TreeObjectsQueueItem>::new();
-        let mut blobs_restore_plan = restore_blobs::BlobsRebuildingPlan::new();
+        let tree_obj_queue = Arc::new(Mutex::new(VecDeque::<process_tree::TreeObjectsQueueItem>::new()));
+        let blobs_restore_plan = Arc::new(Mutex::new(restore_blobs::BlobsRebuildingPlan::new()));
         let sha = git_hash::ObjectId::from_str(sha)?;
         commits_queue.push_front(sha);
 
@@ -192,10 +200,10 @@ where
                         branches.insert(branch.name);
                     }
                 } else {
-                    branches.insert(branch.to_owned());
+                    branches.insert(branch.clone());
                 }
 
-                let to_load = TreeObjectsQueueItem {
+                let to_load = process_tree::TreeObjectsQueueItem {
                     path: "".to_owned(),
                     oid: obj.tree,
                     branches,
@@ -213,7 +221,7 @@ where
                     next_commit_of_prev_version.push((prev_version, id.to_string()));
                     // }
                 } else {
-                    tree_obj_queue.push_front(to_load);
+                    tree_obj_queue.lock().await.push_front(to_load);
                     for parent_id in &obj.parents {
                         commits_queue.push_front(*parent_id);
                     }
@@ -234,94 +242,54 @@ where
             break;
         }
 
+        let mut tree_handlers = JoinSet::<Result<(), anyhow::Error>>::new();
+        let mut trees_counter = AtomicU64::new(0);
+        let mut resolved_spawns = AtomicU64::new(0);
         loop {
-            if blobs_restore_plan.is_available() {
-                let visited_ref = Arc::clone(&visited);
-                let visited_ipfs_ref = Arc::clone(&visited_ipfs);
-                tracing::debug!("branch={branch}: Restoring blobs");
-                blobs_restore_plan
-                    .restore(self, visited_ref, visited_ipfs_ref)
-                    .await?;
-                blobs_restore_plan = restore_blobs::BlobsRebuildingPlan::new();
-                continue;
+            let blobs_restore_plan_ref = blobs_restore_plan.clone();
+            {
+                let mut blobs_restore_plan = blobs_restore_plan_ref.lock().await;
+                if blobs_restore_plan.is_available() {
+                    let visited_ref = Arc::clone(&visited);
+                    let visited_ipfs_ref = Arc::clone(&visited_ipfs);
+                    tracing::debug!("branch={}: Restoring blobs", branch.clone());
+                    blobs_restore_plan
+                        .restore(self, visited_ref, visited_ipfs_ref)
+                        .await?;
+                    // blobs_restore_plan_ref = Arc::new(Mutex::new(restore_blobs::BlobsRebuildingPlan::new()));
+                    continue;
+                }
             }
-            if let Some(tree_node_to_load) = tree_obj_queue.pop_front() {
+
+            if let Some(tree_node_to_load) = tree_obj_queue.clone().lock().await.pop_front() {
                 tracing::debug!("branch={branch}: Loading tree: {:?}", tree_node_to_load);
                 let id = tree_node_to_load.oid;
                 tracing::debug!("branch={branch}: Loading tree: {}", id);
                 guard!(id);
                 tracing::debug!("branch={branch}: Ok. Guard passed. Loading tree: {}", id);
-                let path_to_node = tree_node_to_load.path;
-                let tree_object_id = format!("{}", tree_node_to_load.oid);
+                let es_client = self.blockchain.client().clone();
                 let mut repo_contract = self.blockchain.repo_contract().clone();
-                let address = blockchain::Tree::calculate_address(
-                    &Arc::clone(self.blockchain.client()),
-                    &mut repo_contract,
-                    &tree_object_id,
-                )
-                .await?;
-
-                let onchain_tree_object =
-                    blockchain::Tree::load(&self.blockchain.client(), &address).await?;
-                let tree_object: git_object::Tree = onchain_tree_object.into();
-
-                tracing::debug!("branch={branch}: Tree obj parsed {}", id);
-                for entry in &tree_object.entries {
-                    let oid = entry.oid;
-                    match entry.mode {
-                        git_object::tree::EntryMode::Tree => {
-                            tracing::debug!("branch={branch}: Tree entry: tree {}->{}", id, oid);
-                            let to_load = TreeObjectsQueueItem {
-                                path: format!("{}/{}", path_to_node, entry.filename),
-                                oid,
-                                branches: tree_node_to_load.branches.clone(),
-                            };
-                            tree_obj_queue.push_back(to_load);
-                        }
-                        git_object::tree::EntryMode::Commit => (),
-                        git_object::tree::EntryMode::Blob
-                        | git_object::tree::EntryMode::BlobExecutable
-                        | git_object::tree::EntryMode::Link => {
-                            tracing::debug!("branch={branch}: Tree entry: blob {}->{}", id, oid);
-                            let file_path = format!("{}/{}", path_to_node, entry.filename);
-                            for branch in tree_node_to_load.branches.iter() {
-                                let mut repo_contract = self.blockchain.repo_contract().clone();
-                                let snapshot_address = blockchain::Snapshot::calculate_address(
-                                    &Arc::clone(self.blockchain.client()),
+                let branch_ref = branch.clone();
+                let tree_obj_queue_ref = tree_obj_queue.clone();
+                let blobs_restore_plan_ref = blobs_restore_plan.clone();
+                tree_handlers.spawn(
+                    async move {
+                        Retry::spawn(
+                            FibonacciBackoff::from_millis(100).take(5),
+                            || async {
+                                tracing::debug!("attempt to process tree object: {id}");
+                                process_tree::process_tree(
+                                    &es_client,
                                     &mut repo_contract,
-                                    branch,
-                                    // Note:
-                                    // Removing prefixing "/" in the path
-                                    &file_path[1..],
-                                )
-                                .await?;
-                                let snapshot_contract =
-                                    GoshContract::new(&snapshot_address, gosh_abi::SNAPSHOT);
-                                match snapshot_contract.is_active(self.blockchain.client()).await {
-                                    Ok(true) => {
-                                        tracing::debug!(
-                                            "branch={branch}: Adding a blob to search for. Path: {}, id: {}, snapshot: {}",
-                                            file_path,
-                                            oid,
-                                            snapshot_address
-                                        );
-                                        blobs_restore_plan
-                                            .mark_blob_to_restore(snapshot_address, oid);
-                                    }
-                                    _ => {
-                                        continue;
-                                    }
-                                }
-                            }
-                        }
-                        _ => {
-                            tracing::debug!("branch={branch}: IT MUST BE NOTED!");
-                            panic!();
-                        }
-                    }
-                }
-                tracing::trace!("Push to dangling tree: {}", tree_object_id);
-                dangling_trees.push(tree_object);
+                                    &branch_ref,
+                                    &tree_node_to_load,
+                                    tree_obj_queue_ref.clone(),
+                                    blobs_restore_plan_ref.clone(),
+                                ).await
+                            },
+                        ).await
+                    }.instrument(info_span!("tokio::spawn::process_tree").or_current()),
+                );
                 continue;
             }
             if !dangling_trees.is_empty() {
@@ -384,58 +352,6 @@ where
 
         Ok(result)
     }
-}
-
-fn serialize_tree(tree: &git_object::Tree) -> anyhow::Result<Vec<u8>> {
-    let mut buffer = vec![];
-    let mut objects = tree.entries.clone();
-    let names = objects
-        .clone()
-        .iter()
-        .map(|entry| entry.filename.to_string())
-        .collect::<Vec<String>>();
-    tracing::trace!("Serialize tree before sort: {:?}", names);
-    objects.sort_by(|l_obj, r_obj| {
-        let l_name = match l_obj.mode {
-            EntryMode::Tree => {
-                format!("{}/", l_obj.filename)
-            }
-            _ => l_obj.filename.to_string(),
-        };
-        let r_name = match r_obj.mode {
-            EntryMode::Tree => {
-                format!("{}/", r_obj.filename)
-            }
-            _ => r_obj.filename.to_string(),
-        };
-        l_name.cmp(&r_name)
-    });
-    let names = objects
-        .clone()
-        .iter()
-        .map(|entry| entry.filename.to_string())
-        .collect::<Vec<String>>();
-    tracing::trace!("Serialize tree after sort: {:?}", names);
-
-    for git_object::tree::Entry {
-        mode,
-        filename,
-        oid,
-    } in &objects
-    {
-        buffer.write_all(mode.as_bytes())?;
-        buffer.write_all(b" ")?;
-
-        if filename.find_byte(b'\n').is_some() {
-            anyhow::bail!("Newline in file name: {}", filename.to_string());
-        }
-        buffer.write_all(filename)?;
-        buffer.write_all(&[b'\0'])?;
-
-        buffer.write_all(oid.as_bytes())?;
-    }
-
-    Ok(buffer)
 }
 
 #[cfg(test)]

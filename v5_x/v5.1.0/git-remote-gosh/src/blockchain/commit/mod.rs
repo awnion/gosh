@@ -4,7 +4,7 @@ use ton_client::abi::{decode_message_body, Abi, ParamsOfDecodeMessageBody};
 use ton_client::net::ParamsOfQuery;
 pub mod save;
 
-use crate::blockchain::serde_number::NumberU64;
+// use crate::blockchain::serde_number::NumberU64;
 use std::sync::Arc;
 
 use super::contract::GoshContract;
@@ -13,14 +13,14 @@ use super::contract::GoshContract;
 #[abi = "commit.abi.json"]
 #[abi_data_fn = "getCommit"]
 pub struct GoshCommit {
-    repo: String,
+    // repo: String,
     pub branch: String,
     pub sha: String,
     pub parents: Vec<AddrVersion>,
     pub content: String,
     pub initupgrade: bool,
-    #[serde(rename = "isCorrectCommit")]
-    is_correct_commit: bool,
+    // #[serde(rename = "isCorrectCommit")]
+    // is_correct_commit: bool,
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -57,12 +57,12 @@ struct Messages {
 struct SetCommitArgs {
     #[serde(rename = "nameBranch")]
     branch: String,
-    #[serde(rename = "oldcommit")]
-    prev_commit: String,
+    // #[serde(rename = "oldcommit")]
+    // prev_commit: String,
     #[serde(rename = "namecommit")]
     commit_id: String,
-    #[serde(rename = "number")]
-    num_of_files: NumberU64,
+    // #[serde(rename = "number")]
+    // num_of_files: NumberU64,
 }
 
 #[instrument(level = "info", skip_all)]
