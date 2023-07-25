@@ -69,7 +69,6 @@ impl ParallelSnapshotUploadSupport {
     }
 
     pub fn inc(&mut self) {
-        eprintln!("+snap");
         self.counter += 1;
     }
 
@@ -203,7 +202,6 @@ impl ParallelCommitUploadSupport {
     }
 
     pub fn inc(&mut self) {
-        eprintln!("+commit");
         self.counter += 1;
     }
 
@@ -335,7 +333,6 @@ impl ParallelTreeUploadSupport {
     }
 
     pub fn inc(&mut self) {
-        eprintln!("+tree");
         self.counter += 1;
     }
 

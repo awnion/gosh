@@ -76,7 +76,6 @@ impl ParallelDiffsUploadSupport {
     }
 
     pub fn inc(&mut self) {
-        eprintln!("+diff");
         self.counter += 1;
     }
 
