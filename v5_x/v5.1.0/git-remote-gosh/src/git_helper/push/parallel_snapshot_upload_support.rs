@@ -29,6 +29,7 @@ const WAIT_TREE_READY_MAX_ATTEMPTS: i32 = 3;
 pub struct ParallelSnapshotUploadSupport {
     expecting_deployed_contacts_addresses: Vec<String>,
     pushed_blobs: JoinSet<anyhow::Result<()>>,
+    counter: usize,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -63,8 +64,19 @@ impl ParallelSnapshotUploadSupport {
         Self {
             expecting_deployed_contacts_addresses: vec![],
             pushed_blobs: JoinSet::new(),
+            counter: 0,
         }
     }
+
+    pub fn inc(&mut self) {
+        eprintln!("+snap");
+        self.counter += 1;
+    }
+
+    pub fn counter(&self) -> usize {
+        self.counter
+    }
+
 
     pub fn get_expected(&self) -> &Vec<String> {
         &self.expecting_deployed_contacts_addresses
@@ -147,6 +159,7 @@ impl ParallelSnapshotUploadSupport {
 pub struct ParallelCommitUploadSupport {
     expecting_deployed_contacts_addresses: Vec<String>,
     pushed_blobs: JoinSet<anyhow::Result<()>>,
+    counter: usize,
 }
 
 #[derive(Clone, Debug)]
@@ -185,7 +198,17 @@ impl ParallelCommitUploadSupport {
         Self {
             expecting_deployed_contacts_addresses: vec![],
             pushed_blobs: JoinSet::new(),
+            counter: 0,
         }
+    }
+
+    pub fn inc(&mut self) {
+        eprintln!("+commit");
+        self.counter += 1;
+    }
+
+    pub fn counter(&self) -> usize {
+        self.counter
     }
 
     pub fn get_expected(&self) -> &Vec<String> {
@@ -282,6 +305,7 @@ impl ParallelCommitUploadSupport {
 pub struct ParallelTreeUploadSupport {
     expecting_deployed_contacts_addresses: Vec<String>,
     pushed_blobs: JoinSet<anyhow::Result<()>>,
+    counter: usize,
 }
 
 #[derive(Clone, Debug)]
@@ -306,7 +330,17 @@ impl ParallelTreeUploadSupport {
         Self {
             expecting_deployed_contacts_addresses: vec![],
             pushed_blobs: JoinSet::new(),
+            counter: 0,
         }
+    }
+
+    pub fn inc(&mut self) {
+        eprintln!("+tree");
+        self.counter += 1;
+    }
+
+    pub fn counter(&self) -> usize {
+        self.counter
     }
 
     pub fn get_expected(&self) -> &Vec<String> {

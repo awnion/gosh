@@ -20,6 +20,7 @@ pub struct ParallelDiffsUploadSupport {
     last_commit_id: git_hash::ObjectId,
     expecting_deployed_contacts_addresses: Vec<String>,
     pushed_blobs: JoinSet<anyhow::Result<()>>,
+    counter: usize,
 }
 
 #[derive(Clone, Debug)]
@@ -70,7 +71,17 @@ impl ParallelDiffsUploadSupport {
             last_commit_id: *last_commit_id,
             expecting_deployed_contacts_addresses: vec![],
             pushed_blobs: JoinSet::new(),
+            counter: 0,
         }
+    }
+
+    pub fn inc(&mut self) {
+        eprintln!("+diff");
+        self.counter += 1;
+    }
+
+    pub fn counter(&self) -> usize {
+        self.counter
     }
 
     pub fn get_expected(&self) -> &Vec<String> {
@@ -135,16 +146,20 @@ impl ParallelDiffsUploadSupport {
                 .await?;
                 let diff_contract_address = String::from(diff_contract_address);
 
-                if !context.get_db()?.diff_exists(&diff_contract_address)? {
-                    context.get_db()?.put_diff(
-                        (&parallel_diff, diff_coordinates, true),
-                        diff_contract_address.clone(),
-                    )?;
-
-                    self.add_to_push_list(context, diff_contract_address)
-                        .await?;
+                if std::env::var("GOSH_DRY_RUN").is_ok() {
+                    self.inc();
                 } else {
-                    self.push_expected(diff_contract_address);
+                    if !context.get_db()?.diff_exists(&diff_contract_address)? {
+                        context.get_db()?.put_diff(
+                            (&parallel_diff, diff_coordinates, true),
+                            diff_contract_address.clone(),
+                        )?;
+
+                        self.add_to_push_list(context, diff_contract_address)
+                            .await?;
+                    } else {
+                        self.push_expected(diff_contract_address);
+                    }
                 }
             }
         }
@@ -257,16 +272,20 @@ impl ParallelDiffsUploadSupport {
                 .await?;
                 let diff_contract_address = String::from(diff_contract_address);
 
-                if !context.get_db()?.diff_exists(&diff_contract_address)? {
-                    context.get_db()?.put_diff(
-                        (&parallel_diff, diff_coordinates, false),
-                        diff_contract_address.clone(),
-                    )?;
-
-                    self.add_to_push_list(context, diff_contract_address)
-                        .await?;
+                if std::env::var("GOSH_DRY_RUN").is_ok() {
+                    self.inc();
                 } else {
-                    self.push_expected(diff_contract_address);
+                    if !context.get_db()?.diff_exists(&diff_contract_address)? {
+                        context.get_db()?.put_diff(
+                            (&parallel_diff, diff_coordinates, false),
+                            diff_contract_address.clone(),
+                        )?;
+
+                        self.add_to_push_list(context, diff_contract_address)
+                            .await?;
+                    } else {
+                        self.push_expected(diff_contract_address);
+                    }
                 }
             }
         }

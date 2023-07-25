@@ -171,17 +171,21 @@ where
             .await?;
             let snapshot_addr = String::from(snapshot_addr);
 
-            if !self.get_db()?.snapshot_exists(&snapshot_addr)? {
-                let snapshot =
-                    ParallelSnapshot::new(branch_name, file_path, upgrade_commit, commit_str);
-                self.get_db()?
-                    .put_snapshot(&snapshot, snapshot_addr.clone())?;
-
-                parallel_snapshot_uploads
-                    .add_to_push_list(self, snapshot_addr, prev_repo_address)
-                    .await?;
+            if std::env::var("GOSH_DRY_RUN").is_ok() {
+                parallel_snapshot_uploads.inc();
             } else {
-                parallel_snapshot_uploads.push_expected(snapshot_addr);
+                if !self.get_db()?.snapshot_exists(&snapshot_addr)? {
+                    let snapshot =
+                        ParallelSnapshot::new(branch_name, file_path, upgrade_commit, commit_str);
+                    self.get_db()?
+                        .put_snapshot(&snapshot, snapshot_addr.clone())?;
+
+                    parallel_snapshot_uploads
+                        .add_to_push_list(self, snapshot_addr, prev_repo_address)
+                        .await?;
+                } else {
+                    parallel_snapshot_uploads.push_expected(snapshot_addr);
+                }
             }
         }
         if !upgrade_commit {
@@ -566,14 +570,18 @@ where
             )
             .await?;
             let commit_address = String::from(commit_address);
-            if !self.get_db()?.commit_exists(&commit_address)? {
-                self.get_db()?.put_commit(commit, commit_address.clone())?;
-
-                push_commits
-                    .add_to_push_list(self, commit_address, push_semaphore.clone())
-                    .await?;
+            if std::env::var("GOSH_DRY_RUN").is_ok() {
+                push_commits.inc();
             } else {
-                push_commits.push_expected(commit_address);
+                if !self.get_db()?.commit_exists(&commit_address)? {
+                    self.get_db()?.put_commit(commit, commit_address.clone())?;
+
+                    push_commits
+                        .add_to_push_list(self, commit_address, push_semaphore.clone())
+                        .await?;
+                } else {
+                    push_commits.push_expected(commit_address);
+                }
             }
         }
 
@@ -1035,6 +1043,14 @@ where
         // push dangling diffs
         parallel_diffs_upload_support.push_dangling(self).await?;
         let number_of_files_changed = parallel_diffs_upload_support.get_parallels_number();
+
+        if std::env::var("GOSH_DRY_RUN").is_ok() {
+            eprintln!("Commits: {}", push_commits.counter());
+            eprintln!("Trees: {}", parallel_tree_uploads.counter());
+            eprintln!("Snapshots: {}", parallel_snapshot_uploads.counter());
+            eprintln!("Diffs: {}", parallel_diffs_upload_support.counter());
+            std::process::exit(0);
+        }
 
         tracing::trace!("Start of wait for contracts to be deployed");
         let mut expected_contracts = vec![];
