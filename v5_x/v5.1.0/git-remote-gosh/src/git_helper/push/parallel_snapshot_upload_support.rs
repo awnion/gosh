@@ -70,6 +70,9 @@ impl ParallelSnapshotUploadSupport {
 
     pub fn inc(&mut self) {
         self.counter += 1;
+        if self.counter % 100 == 0 {
+            eprintln!("snaps: {}", self.counter);
+        }
     }
 
     pub fn counter(&self) -> usize {
@@ -203,6 +206,9 @@ impl ParallelCommitUploadSupport {
 
     pub fn inc(&mut self) {
         self.counter += 1;
+        if self.counter % 100 == 0 {
+            eprintln!("commits: {}", self.counter);
+        }
     }
 
     pub fn counter(&self) -> usize {
@@ -334,6 +340,9 @@ impl ParallelTreeUploadSupport {
 
     pub fn inc(&mut self) {
         self.counter += 1;
+        if self.counter % 100 == 0 {
+            eprintln!("trees: {}", self.counter);
+        }
     }
 
     pub fn counter(&self) -> usize {

@@ -77,6 +77,9 @@ impl ParallelDiffsUploadSupport {
 
     pub fn inc(&mut self) {
         self.counter += 1;
+        if self.counter % 100 == 0 {
+            eprintln!("diffs: {}", self.counter);
+        }
     }
 
     pub fn counter(&self) -> usize {
@@ -146,7 +149,7 @@ impl ParallelDiffsUploadSupport {
                 let diff_contract_address = String::from(diff_contract_address);
 
                 if std::env::var("GOSH_DRY_RUN").is_ok() {
-                    self.inc();
+                    return Ok(());
                 } else {
                     if !context.get_db()?.diff_exists(&diff_contract_address)? {
                         context.get_db()?.put_diff(
@@ -245,35 +248,34 @@ impl ParallelDiffsUploadSupport {
         context: &mut GitHelper<impl BlockchainService + 'static>,
         diff: ParallelDiff,
     ) -> anyhow::Result<()> {
-        let file_path = diff.file_path.clone();
-        let diff_coordinates = self.next_diff(&file_path);
-        let prev_value = if self.dangling_diffs.contains(&file_path) {
-            Some(context.get_db()?.get_dangling_diff(&file_path)?)
+        if std::env::var("GOSH_DRY_RUN").is_ok() {
+            self.inc();
         } else {
-            self.dangling_diffs.push(file_path.clone());
-            None
-        };
+            let file_path = diff.file_path.clone();
+            let diff_coordinates = self.next_diff(&file_path);
+            let prev_value = if self.dangling_diffs.contains(&file_path) {
+                Some(context.get_db()?.get_dangling_diff(&file_path)?)
+            } else {
+                self.dangling_diffs.push(file_path.clone());
+                None
+            };
 
-        context
-            .get_db()?
-            .put_dangling_diff((&diff, diff_coordinates), file_path)?;
+            context
+                .get_db()?
+                .put_dangling_diff((&diff, diff_coordinates), file_path)?;
 
-        match prev_value {
-            None => {}
-            Some((parallel_diff, diff_coordinates)) => {
-                let mut repo_contract = context.blockchain.repo_contract().clone();
-                let diff_contract_address = diff_address(
-                    &context.blockchain.client(),
-                    &mut repo_contract,
-                    &self.last_commit_id,
-                    &diff_coordinates,
-                )
-                .await?;
-                let diff_contract_address = String::from(diff_contract_address);
-
-                if std::env::var("GOSH_DRY_RUN").is_ok() {
-                    self.inc();
-                } else {
+            match prev_value {
+                None => {}
+                Some((parallel_diff, diff_coordinates)) => {
+                    let mut repo_contract = context.blockchain.repo_contract().clone();
+                    let diff_contract_address = diff_address(
+                        &context.blockchain.client(),
+                        &mut repo_contract,
+                        &self.last_commit_id,
+                        &diff_coordinates,
+                    )
+                        .await?;
+                    let diff_contract_address = String::from(diff_contract_address);
                     if !context.get_db()?.diff_exists(&diff_contract_address)? {
                         context.get_db()?.put_diff(
                             (&parallel_diff, diff_coordinates, false),
