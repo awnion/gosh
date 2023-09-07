@@ -81,9 +81,10 @@ pipeline {
             steps {
                 script {
                     sh "cd ${WORKSPACE}"
-                    sh 'rm -rf linux-*'
-                    sh 'rm -rf darwin-*'
-                    sh 'rm -rf windows-*'
+                    for (target_os_platform in ['linux-amd64', 'linux-arm64', 'darwin-amd64', 'darwin-arm64', 'windows-amd64']) {
+                        sh "rm -rf ${target_os_platform}"
+                        sh "mkdir -p ${target_os_platform}"
+                    }
                 }
             }
         }
