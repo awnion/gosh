@@ -90,7 +90,11 @@ pipeline {
 
                     for (versionPath in versionPaths) {
                         parallelStages[versionPath] = {
-                            buildRemoteGosh(versionPath)
+                            stage(versionPath) {
+                                steps {
+                                    buildRemoteGosh versionPath
+                                }
+                            }
                         }
                     }
                     parallel parallelStages
@@ -318,11 +322,11 @@ def buildRemoteGosh(String versionPath) {
     script {
         String version = versionPath.split('/')[-1].replace('.', '_')
         if (params.DRYRUN) {
-            sh "touch linux-amd64/git-remote-gosh_v${version}"
-            sh "touch linux-arm64/git-remote-gosh_v${version}"
-            sh "touch darwin-amd64/git-remote-gosh_v${version}"
-            sh "touch darwin-arm64/git-remote-gosh_v${version}"
-            sh "touch windows-amd64/git-remote-gosh_v${version}"
+            sh "touch linux-amd64/git-remote-gosh_${version}"
+            sh "touch linux-arm64/git-remote-gosh_${version}"
+            sh "touch darwin-amd64/git-remote-gosh_${version}"
+            sh "touch darwin-arm64/git-remote-gosh_${version}"
+            sh "touch windows-amd64/git-remote-gosh_${version}"
             return true
         }
         dir("${version}/git-remote-gosh") {
@@ -394,6 +398,7 @@ def archiveAzureArtifacts() {
 
             ls -la linux-a*
             ls -la darwin-a*
+            ls -la windows-a*
 
             cp dispatcher.ini linux-amd64/
             cp dispatcher.ini linux-arm64/
