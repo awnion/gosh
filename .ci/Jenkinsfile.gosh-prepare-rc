@@ -277,11 +277,12 @@ def buildDispatcher() {
 
             timeout(time: 1, unit: 'HOURS') {
                 while (PIPELINE_2_STATUS != 'completed') {
-                    sleep time: 10, unit: 'SECONDS'
+                    sleep time: 60, unit: 'SECONDS'
                     PIPELINE_2_STATUS = sh(
                         script: "az pipelines build show --project gosh --id ${PIPELINE_2_ID} | jq -r .status",
                         returnStdout: true,
                     ).trim()
+                    println "$PIPELINE_2_STATUS"
                 }
             }
 
@@ -293,33 +294,12 @@ def buildDispatcher() {
             if (params.DRYRUN) {
                 sh "az pipelines runs artifact download --project gosh --artifact-name linux-amd64 --run-id ${PIPELINE_2_ID} --path linux-amd64 && sleep 2"
             } else {
-                def parallelDownloads = [:]
-
-                // Define the artifact download commands in parallel
-                parallelDownloads['linux-amd64'] = {
-                    sh "az pipelines runs artifact download --project gosh --artifact-name linux-amd64 --run-id ${PIPELINE_2_ID} --path linux-amd64 && sleep 2"
-                }
-
-                parallelDownloads['linux-arm64'] = {
-                    sh "az pipelines runs artifact download --project gosh --artifact-name linux-arm64 --run-id ${PIPELINE_2_ID} --path linux-arm64 && sleep 2"
-                }
-
-                parallelDownloads['darwin-amd64'] = {
-                    sh "az pipelines runs artifact download --project gosh --artifact-name darwin-amd64 --run-id ${PIPELINE_2_ID} --path darwin-amd64 && sleep 2"
-                }
-
-                parallelDownloads['darwin-arm64'] = {
-                    sh "az pipelines runs artifact download --project gosh --artifact-name darwin-arm64 --run-id ${PIPELINE_2_ID} --path darwin-arm64 && sleep 2"
-                }
-
-                parallelDownloads['windows-amd64'] = {
-                    sh "az pipelines runs artifact download --project gosh --artifact-name windows-amd64 --run-id ${PIPELINE_2_ID} --path windows-amd64 && sleep 2"
-                }
-
-                // Execute the artifact downloads in parallel
-                parallel parallelDownloads
+                sh "az pipelines runs artifact download --project gosh --artifact-name linux-amd64 --run-id ${PIPELINE_2_ID} --path linux-amd64 && sleep 2"
+                sh "az pipelines runs artifact download --project gosh --artifact-name linux-arm64 --run-id ${PIPELINE_2_ID} --path linux-arm64 && sleep 2"
+                sh "az pipelines runs artifact download --project gosh --artifact-name darwin-amd64 --run-id ${PIPELINE_2_ID} --path darwin-amd64 && sleep 2"
+                sh "az pipelines runs artifact download --project gosh --artifact-name darwin-arm64 --run-id ${PIPELINE_2_ID} --path darwin-arm64 && sleep 2"
+                sh "az pipelines runs artifact download --project gosh --artifact-name windows-amd64 --run-id ${PIPELINE_2_ID} --path windows-amd64 && sleep 2"
             }
-            error message: 'tmp end'
         }
     }
 }
