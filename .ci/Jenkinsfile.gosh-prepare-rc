@@ -33,7 +33,7 @@ def batchSize = 10
 pipeline {
     agent none
     //triggers {
-    //    cron('30 23 * * *') //run at 23:31:00 
+    //    cron('30 23 * * *') //run at 23:31:00
     //}
     options {
         timestamps ()
@@ -198,7 +198,7 @@ pipeline {
                 deployWeb()
             }
         }
-        
+
         stage('Tests: Web') {
             when { expression { return params.TEST_WEB } }
             agent {
@@ -244,9 +244,9 @@ pipeline {
             }
         }
     }
-    post { 
-        always { 
-            node('jenkins-main') { 
+    post {
+        always {
+            node('jenkins-main') {
                 cleanWs()
             }
         }
@@ -263,7 +263,7 @@ def buildDispatcher() {
             def shExitStatus = sh script: '''
                 #!/bin/bash
                 set -ex
-                
+
                 # 2 = gosh-dispatcher
                 if [ \${DRYRUN} = "true" ]; then
                     PIPELINE_2_ID=$(az pipelines build queue --definition-id 2 --branch \${COMMIT} --project gosh --variables DRYRUN=true | jq .id)
@@ -315,7 +315,7 @@ def buildDispatcherDebug() {
 
                 az pipelines runs artifact download --project gosh --artifact-name linux-amd64 --run-id 1489 --path linux-amd64 && sleep 2
             ''', returnStatus: true
-            
+
             if (shExitStatus != 0) {
                 error("Failed to execute Bash script")
             }
@@ -357,9 +357,9 @@ def buildRemoteGosh(version) {
                     az pipelines runs artifact download --project gosh --artifact-name linux-arm64 --run-id \$PIPELINE_1_ID --path linux-arm64 && sleep 2
                     az pipelines runs artifact download --project gosh --artifact-name darwin-arm64 --run-id \$PIPELINE_1_ID --path darwin-arm64 && sleep 2
                 fi
-                
+
             """, returnStatus: true
-            
+
             if (shExitStatus != 0) {
                 error("Failed to execute Bash script")
             }
@@ -376,12 +376,12 @@ def buildRemoteGoshDebug(version) {
 
                 cd ${WORKSPACE}
                 export VSTS_ARTIFACTTOOL_DISABLE_HARDLINKS=1
-                
+
                 az pipelines runs artifact download --project gosh --artifact-name linux-amd64 --run-id 1494 --path linux-amd64 && sleep 2
                 az pipelines runs artifact download --project gosh --artifact-name linux-amd64 --run-id 1493 --path linux-amd64 && sleep 2
                 az pipelines runs artifact download --project gosh --artifact-name linux-amd64 --run-id 1495 --path linux-amd64 && sleep 2
             """, returnStatus: true
-            
+
             if (shExitStatus != 0) {
                 error("Failed to execute Bash script")
             }
@@ -401,21 +401,27 @@ def archiveAzureArtifacts() {
             find . -name \'git-remote-gosh_v*\' | tr -d ./ > dispatcher.ini
             cd -
 
+            chmod +x linux-a*/git*
+            chmod +x darwin-a*/git*
+
+            cp linux-amd64/dispatcher.ini linux-arm64/
+            cp linux-amd64/dispatcher.ini darwin-amd64/
+            cp linux-amd64/dispatcher.ini darwin-arm64/
+            cp linux-amd64/dispatcher.ini windows-amd64/
+
             if [ \${DRYRUN} = "true" ]; then
-                chmod +x linux-a*/git*
-                cp linux-amd64/dispatcher.ini darwin-amd64
                 tar -czvf git-remote-gosh-linux-amd64.tar.gz -C linux-amd64 $(ls -A linux-amd64)
             else
-                chmod +x linux-a*/git*
-                chmod +x darwin-a*/git*
-                cp linux-amd64/dispatcher.ini darwin-amd64
-                cp linux-amd64/dispatcher.ini linux-arm64
-                cp linux-amd64/dispatcher.ini darwin-arm64
-                cp linux-amd64/dispatcher.ini windows-amd64
-                tar -czvf git-remote-gosh-linux-amd64.tar.gz -C linux-amd64 $(ls -A linux-amd64)
-                tar -czvf git-remote-gosh-darwin-amd64.tar.gz -C darwin-amd64 $(ls -A darwin-amd64)
-                tar -czvf git-remote-gosh-linux-arm64.tar.gz -C linux-arm64 $(ls -A linux-arm64)
-                tar -czvf git-remote-gosh-darwin-arm64.tar.gz -C darwin-arm64 $(ls -A darwin-arm64)  
+
+                for TARGET_OS_ARCH in {linux-amd64,linux-arm64,darwin-amd64,darwin-arm64}; do
+                    tar -czvf git-remote-gosh-${TARGET_OS_ARCH}.tar.gz -C ${TARGET_OS_ARCH} $(ls -A ${TARGET_OS_ARCH})
+                done
+
+                # tar -czvf git-remote-gosh-linux-amd64.tar.gz -C linux-amd64 $(ls -A linux-amd64)
+                # tar -czvf git-remote-gosh-linux-arm64.tar.gz -C linux-arm64 $(ls -A linux-arm64)
+                # tar -czvf git-remote-gosh-darwin-amd64.tar.gz -C darwin-amd64 $(ls -A darwin-amd64)
+                # tar -czvf git-remote-gosh-darwin-arm64.tar.gz -C darwin-arm64 $(ls -A darwin-arm64)
+
                 cd windows-amd64 && zip -r git-remote-gosh-windows-amd64.zip ./* && cp git-remote-gosh-windows-amd64.zip ../
             fi
         '''
@@ -572,14 +578,14 @@ def deployWeb() {
             sed -i '/REACT_APP_GOSH =/s/\$/{"1.0.0": "${REACT_APP_GOSH}"}/' web/.env.ci
             cat web/.env.ci
         """
-        dir('web') {     
+        dir('web') {
             sh "make build ENV=ci REACT_APP_ISDOCKEREXT=false"
             def status = sh(script: "aws s3api head-bucket --bucket ${BUCKET_NAME}", returnStatus: true)
             if (status == 0) {
                 echo 'Bucket already exists. Just syncing.'
                 sh "aws s3 sync build/ s3://${BUCKET_NAME}"
             } else {
-                sh """      
+                sh """
                     aws s3api create-bucket --bucket ${BUCKET_NAME} --region eu-west-2 --create-bucket-configuration LocationConstraint=eu-west-2
                     aws s3 website s3://${BUCKET_NAME} --index-document index.html --error-document index.html
                     aws s3api put-public-access-block --bucket "${BUCKET_NAME}" --public-access-block-configuration "BlockPublicPolicy=false"
@@ -588,21 +594,21 @@ def deployWeb() {
                     aws s3 sync build/ s3://${BUCKET_NAME}
                     sed "s/BUCKET_NAME/\$BUCKET_NAME/g" ../.ci/nginx/proxy.s3.conf.template >> /opt/nginx/s3-proxy.conf
                     docker restart nginx-test-app-gosh-sh
-                """  
+                """
             }
-        } 
+        }
         timeout(15) {
             waitUntil {
                 def r = sh script: "sleep 20 && curl -s --retry-connrefused --retry 100 --retry-delay 5 https://${BUCKET_NAME}.gosh.sh > /dev/null", returnStatus: true
                 return r == 0
-            }  
-        } 
+            }
+        }
     }
 }
 
 def testWeb() {
     script {
-        dir('monitoring/gosh-mon') {   
+        dir('monitoring/gosh-mon') {
             sh "cp config/credentials.yml.template config/credentials.yml"
             sh "docker build --no-cache -t gosh-mon ."
             def tests = webTestsList()
@@ -636,10 +642,13 @@ def prereleaseBinaries() {
             dir('.ci/scripts') {
                 withCredentials([string(credentialsId: 'github-gosh-release', variable: 'TOKEN')]) {
                     sh './create-github-release.sh $TOKEN ${APP_VERSION} ${COMMIT}'
+                    /// LINUX
                     sh './github-upload-assets.sh $TOKEN ${APP_VERSION} /tmp/${JOB_NAME}/git-remote-gosh-linux-amd64.tar.gz application/gzip'
-                    sh './github-upload-assets.sh $TOKEN ${APP_VERSION} /tmp/${JOB_NAME}/git-remote-gosh-darwin-amd64.tar.gz application/gzip'
                     sh './github-upload-assets.sh $TOKEN ${APP_VERSION} /tmp/${JOB_NAME}/git-remote-gosh-linux-arm64.tar.gz application/gzip'
+                    /// MAC OS
+                    sh './github-upload-assets.sh $TOKEN ${APP_VERSION} /tmp/${JOB_NAME}/git-remote-gosh-darwin-amd64.tar.gz application/gzip'
                     sh './github-upload-assets.sh $TOKEN ${APP_VERSION} /tmp/${JOB_NAME}/git-remote-gosh-darwin-arm64.tar.gz application/gzip'
+                    /// WINDOWS
                     sh './github-upload-assets.sh $TOKEN ${APP_VERSION} /tmp/${JOB_NAME}/git-remote-gosh-windows-amd64.zip application/zip'
                     //sh './package-deb.sh /tmp/${JOB_NAME}'
                     //sh './github-upload-assets.sh $TOKEN ${APP_VERSION} ./git-remote-gosh-windows_amd64.deb application/octet-stream'
