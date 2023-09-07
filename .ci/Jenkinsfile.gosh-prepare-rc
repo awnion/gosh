@@ -1,27 +1,27 @@
 def runFunctionSet(function_name) {
     running_set = [
-        "v1_x": {
+        'v1_x': {
             "${function_name}"('v1_x')
         },
-        "v2_x": {
+        'v2_x': {
             "${function_name}"('v2_x')
         },
-        "v3_x": {
+        'v3_x': {
             "${function_name}"('v3_x')
         },
-        "v4_x": {
+        'v4_x': {
             "${function_name}"('v4_x')
         },
-        "v5_x/v5.0.0": {
+        'v5_x/v5.0.0': {
             "${function_name}"('v5_x/v5.0.0')
         },
-        "v5_x/v5.1.0": {
+        'v5_x/v5.1.0': {
             "${function_name}"('v5_x/v5.1.0')
         },
-        "v6_x/v6.0.0": {
+        'v6_x/v6.0.0': {
             "${function_name}"('v6_x/v6.0.0')
         },
-        "v6_x/v6.1.0": {
+        'v6_x/v6.1.0': {
             "${function_name}"('v6_x/v6.1.0')
         }
     ]
@@ -36,7 +36,7 @@ pipeline {
     //    cron('30 23 * * *') //run at 23:31:00
     //}
     options {
-        timestamps ()
+        timestamps()
     }
     parameters {
         gitParameter branchFilter: 'origin/(.*)', defaultValue: 'dev', name: 'sha1', type: 'PT_BRANCH', quickFilterEnabled: true
@@ -61,14 +61,14 @@ pipeline {
                     } else {
                         env.COMMIT = params.sha1
                     }
-                    sh "docker ps -a --filter name=localnode-* -aq | xargs docker rm -f || true"
+                    sh 'docker ps -a --filter name=localnode-* -aq | xargs docker rm -f || true'
                 }
                 echo "${COMMIT}"
                 git branch: "${COMMIT}", url: 'https://github.com/gosh-sh/gosh.git'
                 checkout scm
                 script {
                     env.APP_VERSION = sh script: "cat version.json | jq .version | tr -d '\"\n'", returnStdout: true
-                    currentBuild.displayName = "${BUILD_NUMBER}_${COMMIT}_${APP_VERSION}"
+                    currentBuild.displayName = "${BUILD_NUMBER}_${COMMIT}_${APP_VERSION} DRYRUN=${params.DRYRUN}"
                 }
             }
         }
@@ -80,7 +80,7 @@ pipeline {
             }
             steps {
                 buildDispatcher()
-                // buildDispatcherDebug()
+            // buildDispatcherDebug()
             }
         }
         stage('Build: Git Helper') {
@@ -91,7 +91,7 @@ pipeline {
             }
             steps {
                 runFunctionSet('buildRemoteGosh')
-                // runFunctionSet('buildRemoteGoshDebug')
+            // runFunctionSet('buildRemoteGoshDebug')
             }
         }
 
@@ -116,11 +116,11 @@ pipeline {
             }
             steps {
                 script {
-                    sh "rm -rf tests_workspace_*"
+                    sh 'rm -rf tests_workspace_*'
                     def basePort = 9000
-                    def files = getTestFiles("tests").toList()
+                    def files = getTestFiles('tests').toList()
                     // def versions = ["v4_x", "v5_x/v5.0.0", "v5_x/v5.1.0", "v6_x/v6.0.0"]
-                    def versions = ["v6_x/v6.1.0"]
+                    def versions = ['v6_x/v6.1.0']
                     def batches = []
                     for (int i = 0; i < files.size(); i += batchSize) {
                         def end = Math.min(i + batchSize, files.size())
@@ -137,7 +137,7 @@ pipeline {
                         // runFunctionalTests(batch, basePort + (j * batchSize), "Func v4", "v4_x")
                         // runFunctionalTests(batch, basePort + (j * batchSize), "Func v5.0", "v5_x/v5.0.0")
                         // runFunctionalTests(batch, basePort + (j * batchSize), "Func v5.1", "v5_x/v5.1.0")
-                        runFunctionalTests(batch, basePort + (j * batchSize), "Func v6.1", "v6_x/v6.1.0")
+                        runFunctionalTests(batch, basePort + (j * batchSize), 'Func v6.1', 'v6_x/v6.1.0')
                         sh 'docker ps -a --filter name=localnode-* -aq | grep -v "$(docker ps -a --filter name=localnode-9000 -q)" | xargs docker rm -f'
                     }
                 }
@@ -154,11 +154,11 @@ pipeline {
             }
             steps {
                 script {
-                    sh "rm -rf tests_workspace_*"
+                    sh 'rm -rf tests_workspace_*'
                     def basePort = 9000
-                    def versions = ["v5_x/v5.1.0", "v6_x/v6.0.0", "v6_x/v6.1.0"]
+                    def versions = ['v5_x/v5.1.0', 'v6_x/v6.0.0', 'v6_x/v6.1.0']
 
-                    def upgradeFiles = getTestFiles("tests/upgrade_tests").toList()
+                    def upgradeFiles = getTestFiles('tests/upgrade_tests').toList()
                     def upgradeBatches = []
                     for (int i = 0; i < upgradeFiles.size(); i += batchSize) {
                         def end = Math.min(i + batchSize, upgradeFiles.size())
@@ -173,8 +173,8 @@ pipeline {
                             deployVersion(version, batch, basePort + (j * batchSize))
                         }
 
-                        runUpgradeTests(batch, basePort + (j * batchSize), "v5_x/v5.1.0", "v6_x/v6.1.0")
-                        runUpgradeTests(batch, basePort + (j * batchSize), "v6_x/v6.0.0", "v6_x/v6.1.0")
+                        runUpgradeTests(batch, basePort + (j * batchSize), 'v5_x/v5.1.0', 'v6_x/v6.1.0')
+                        runUpgradeTests(batch, basePort + (j * batchSize), 'v6_x/v6.0.0', 'v6_x/v6.1.0')
                         // runUpgradeTests(batch, basePort + (j * batchSize), "v4_x", "v5_x/v5.1.0")
                         // runUpgradeTests(batch, basePort + (j * batchSize), "v5_x/v5.0.0", "v5_x/v5.1.0")
                         // runUpgradeTests(batch, basePort + (j * batchSize), "v3_x", "v4_x")
@@ -212,8 +212,8 @@ pipeline {
             }
             post {
                 failure {
-                    archiveArtifacts artifacts: "monitoring/gosh-mon/test-errors/*.log"
-                    archiveArtifacts artifacts: "monitoring/gosh-mon/test-errors/*.png"
+                    archiveArtifacts artifacts: 'monitoring/gosh-mon/test-errors/*.log'
+                    archiveArtifacts artifacts: 'monitoring/gosh-mon/test-errors/*.png'
                 }
             }
         }
@@ -260,43 +260,66 @@ pipeline {
 def buildDispatcher() {
     script {
         dir('gosh-dispatcher') {
-            def shExitStatus = sh script: '''
-                #!/bin/bash
-                set -ex
+            String PIPELINE_2_ID
+            String PIPELINE_2_STATUS = ''
 
-                # 2 = gosh-dispatcher
-                if [ \${DRYRUN} = "true" ]; then
-                    PIPELINE_2_ID=$(az pipelines build queue --definition-id 2 --branch \${COMMIT} --project gosh --variables DRYRUN=true | jq .id)
-                else
-                    PIPELINE_2_ID=$(az pipelines build queue --definition-id 2 --branch \${COMMIT} --project gosh | jq .id)
-                fi
-                PIPELINE_2_STATUS=inProgress
-
-                until [ \$PIPELINE_2_STATUS = "completed" ]
-                do
-                    sleep 60
-                    PIPELINE_2_STATUS=$(az pipelines build show --project gosh --id $PIPELINE_2_ID | jq .status | tr -d '\"')
-                done
-
-                cd ${WORKSPACE}
-                rm -rf linux-*
-                rm -rf darwin-*
-                rm -rf windows-*
-
-                if [ \${DRYRUN} = "true" ]; then
-                    az pipelines runs artifact download --project gosh --artifact-name linux-amd64 --run-id $PIPELINE_2_ID --path linux-amd64 && sleep 2
-                else
-                    az pipelines runs artifact download --project gosh --artifact-name linux-amd64 --run-id $PIPELINE_2_ID --path linux-amd64 && sleep 2
-                    az pipelines runs artifact download --project gosh --artifact-name darwin-amd64 --run-id $PIPELINE_2_ID --path darwin-amd64 && sleep 2
-                    az pipelines runs artifact download --project gosh --artifact-name windows-amd64 --run-id $PIPELINE_2_ID --path windows-amd64 && sleep 2
-                    az pipelines runs artifact download --project gosh --artifact-name linux-arm64 --run-id $PIPELINE_2_ID --path linux-arm64 && sleep 2
-                    az pipelines runs artifact download --project gosh --artifact-name darwin-arm64 --run-id $PIPELINE_2_ID --path darwin-arm64 && sleep 2
-                fi
-            ''', returnStatus: true
-
-            if (shExitStatus != 0) {
-                error("Failed to execute Bash script")
+            if (params.DRYRUN) {
+                PIPELINE_2_ID = sh(
+                    script: "az pipelines build queue --definition-id 2 --branch ${COMMIT} --project gosh --variables DRYRUN=true | jq -r .id",
+                    returnStdout: true,
+                ).trim()
+            } else {
+                PIPELINE_2_ID = sh(
+                    script: "az pipelines build queue --definition-id 2 --branch ${COMMIT} --project gosh | jq -r .id",
+                    returnStdout: true,
+                ).trim()
             }
+
+            timeout(time: 1, unit: 'HOURS') {
+                while (PIPELINE_2_STATUS != 'completed') {
+                    sleep time: 10, unit: 'SECONDS'
+                    PIPELINE_2_STATUS = sh(
+                        script: "az pipelines build show --project gosh --id ${PIPELINE_2_ID} | jq -r .status",
+                        returnStdout: true,
+                    ).trim()
+                }
+            }
+
+            sh "cd ${WORKSPACE}"
+            sh 'rm -rf linux-*'
+            sh 'rm -rf darwin-*'
+            sh 'rm -rf windows-*'
+
+            if (params.DRYRUN) {
+                sh "az pipelines runs artifact download --project gosh --artifact-name linux-amd64 --run-id ${PIPELINE_2_ID} --path linux-amd64 && sleep 2"
+            } else {
+                def parallelDownloads = [:]
+
+                // Define the artifact download commands in parallel
+                parallelDownloads['linux-amd64'] = {
+                    sh "az pipelines runs artifact download --project gosh --artifact-name linux-amd64 --run-id ${PIPELINE_2_ID} --path linux-amd64 && sleep 2"
+                }
+
+                parallelDownloads['linux-arm64'] = {
+                    sh "az pipelines runs artifact download --project gosh --artifact-name linux-arm64 --run-id ${PIPELINE_2_ID} --path linux-arm64 && sleep 2"
+                }
+
+                parallelDownloads['darwin-amd64'] = {
+                    sh "az pipelines runs artifact download --project gosh --artifact-name darwin-amd64 --run-id ${PIPELINE_2_ID} --path darwin-amd64 && sleep 2"
+                }
+
+                parallelDownloads['darwin-arm64'] = {
+                    sh "az pipelines runs artifact download --project gosh --artifact-name darwin-arm64 --run-id ${PIPELINE_2_ID} --path darwin-arm64 && sleep 2"
+                }
+
+                parallelDownloads['windows-amd64'] = {
+                    sh "az pipelines runs artifact download --project gosh --artifact-name windows-amd64 --run-id ${PIPELINE_2_ID} --path windows-amd64 && sleep 2"
+                }
+
+                // Execute the artifact downloads in parallel
+                parallel parallelDownloads
+            }
+            error message: 'tmp end'
         }
     }
 }
@@ -304,7 +327,7 @@ def buildDispatcher() {
 def buildDispatcherDebug() {
     script {
         dir('gosh-dispatcher') {
-            def shExitStatus = sh script: '''
+            def shExitStatus = sh script: """
                 #!/bin/bash
                 set -ex
 
@@ -314,10 +337,10 @@ def buildDispatcherDebug() {
                 rm -rf windows-*
 
                 az pipelines runs artifact download --project gosh --artifact-name linux-amd64 --run-id 1489 --path linux-amd64 && sleep 2
-            ''', returnStatus: true
+            """, returnStatus: true
 
             if (shExitStatus != 0) {
-                error("Failed to execute Bash script")
+                error('Failed to execute Bash script')
             }
         }
     }
@@ -361,7 +384,7 @@ def buildRemoteGosh(version) {
             """, returnStatus: true
 
             if (shExitStatus != 0) {
-                error("Failed to execute Bash script")
+                error('Failed to execute Bash script')
             }
         }
     }
@@ -383,7 +406,7 @@ def buildRemoteGoshDebug(version) {
             """, returnStatus: true
 
             if (shExitStatus != 0) {
-                error("Failed to execute Bash script")
+                error('Failed to execute Bash script')
             }
         }
     }
@@ -572,14 +595,14 @@ def prepareHelperForTests() {
 
 def deployWeb() {
     script {
-        env.BUCKET_NAME = "app-" + "${COMMIT}_${APP_VERSION}".replaceAll("[^a-zA-Z0-9 ]+","-")
+        env.BUCKET_NAME = 'app-' + "${COMMIT}_${APP_VERSION}".replaceAll('[^a-zA-Z0-9 ]+', '-')
         sh """
             sed -i '/REACT_APP_GOSH_ROOTADDR =/s/\$/${REACT_APP_GOSH_ROOTADDR}/' web/.env.ci
             sed -i '/REACT_APP_GOSH =/s/\$/{"1.0.0": "${REACT_APP_GOSH}"}/' web/.env.ci
             cat web/.env.ci
         """
         dir('web') {
-            sh "make build ENV=ci REACT_APP_ISDOCKEREXT=false"
+            sh 'make build ENV=ci REACT_APP_ISDOCKEREXT=false'
             def status = sh(script: "aws s3api head-bucket --bucket ${BUCKET_NAME}", returnStatus: true)
             if (status == 0) {
                 echo 'Bucket already exists. Just syncing.'
@@ -609,8 +632,8 @@ def deployWeb() {
 def testWeb() {
     script {
         dir('monitoring/gosh-mon') {
-            sh "cp config/credentials.yml.template config/credentials.yml"
-            sh "docker build --no-cache -t gosh-mon ."
+            sh 'cp config/credentials.yml.template config/credentials.yml'
+            sh 'docker build --no-cache -t gosh-mon .'
             def tests = webTestsList()
             for (int i = 0; i < tests.length; i++) {
                 stage("Test ${tests[i]}") {
@@ -650,9 +673,9 @@ def prereleaseBinaries() {
                     sh './github-upload-assets.sh $TOKEN ${APP_VERSION} /tmp/${JOB_NAME}/git-remote-gosh-darwin-arm64.tar.gz application/gzip'
                     /// WINDOWS
                     sh './github-upload-assets.sh $TOKEN ${APP_VERSION} /tmp/${JOB_NAME}/git-remote-gosh-windows-amd64.zip application/zip'
-                    //sh './package-deb.sh /tmp/${JOB_NAME}'
-                    //sh './github-upload-assets.sh $TOKEN ${APP_VERSION} ./git-remote-gosh-windows_amd64.deb application/octet-stream'
-                    //sh './github-upload-assets.sh $TOKEN ${APP_VERSION} ./git-remote-gosh-windows_arm64.deb application/octet-stream'
+                //sh './package-deb.sh /tmp/${JOB_NAME}'
+                //sh './github-upload-assets.sh $TOKEN ${APP_VERSION} ./git-remote-gosh-windows_amd64.deb application/octet-stream'
+                //sh './github-upload-assets.sh $TOKEN ${APP_VERSION} ./git-remote-gosh-windows_arm64.deb application/octet-stream'
                 }
             }
         }
@@ -673,11 +696,11 @@ def prereleaseDockerExtension() {
 }
 
 def webTestsList() {
-  return "app-setup,seed-read,app-small-write,app-small-read,app-large-write,app-large-read".split(",")
+    return 'app-setup,seed-read,app-small-write,app-small-read,app-large-write,app-large-read'.split(',')
 }
 
-//////////////////////////////////////////////////////////////////////////////////////////////
-////////////DEPRECATED/////////////////////////////////////////
+        //////////////////////////////////////////////////////////////////////////////////////////////
+        ////////////DEPRECATED/////////////////////////////////////////
         /*stage('Build: Docker Extension') {
             agent {
                 docker {
@@ -693,9 +716,6 @@ def webTestsList() {
                 }
             }
         }*/
-
-
-
 
                 /*stage("Prerelease: Git Helper Snap"){
             agent {
