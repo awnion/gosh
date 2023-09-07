@@ -75,24 +75,26 @@ pipeline {
                 }
             }
             steps {
-                def parallelStages = [:]
-                List<String> versionPaths = [
-                    'v1_x/v1.0.0',
-                    'v2_x/v2.0.0',
-                    'v3_x/v3.0.0',
-                    'v4_x/v4.0.0',
-                    'v5_x/v5.0.0',
-                    'v5_x/v5.1.0',
-                    'v6_x/v6.0.0',
-                    'v6_x/v6.1.0',
-                ]
+                script {
+                    def parallelStages = [:]
+                    List<String> versionPaths = [
+                        'v1_x/v1.0.0',
+                        'v2_x/v2.0.0',
+                        'v3_x/v3.0.0',
+                        'v4_x/v4.0.0',
+                        'v5_x/v5.0.0',
+                        'v5_x/v5.1.0',
+                        'v6_x/v6.0.0',
+                        'v6_x/v6.1.0',
+                    ]
 
-                for (versionPath in versionPaths) {
-                    parallelStages[versionPath] = {
-                        buildRemoteGosh(versionPath)
+                    for (versionPath in versionPaths) {
+                        parallelStages[versionPath] = {
+                            buildRemoteGosh(versionPath)
+                        }
                     }
+                    parallel parallelStages
                 }
-                parallel parallelStages
             }
         }
 
