@@ -68,7 +68,7 @@ pipeline {
                 checkout scm
                 script {
                     env.APP_VERSION = sh script: "cat version.json | jq .version | tr -d '\"\n'", returnStdout: true
-                    currentBuild.displayName = "${BUILD_NUMBER}_${COMMIT}_${APP_VERSION} DRYRUN=${params.DRYRUN}"
+                    currentBuild.displayName = "${BUILD_NUMBER}_${COMMIT}_${APP_VERSION} DRYRUN=${DRYRUN}"
                 }
             }
         }
