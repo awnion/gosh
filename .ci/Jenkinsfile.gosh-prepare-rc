@@ -1,33 +1,3 @@
-def runFunctionSet(function_name) {
-    running_set = [
-        'v1_x': {
-            "${function_name}"('v1_x')
-        },
-        'v2_x': {
-            "${function_name}"('v2_x')
-        },
-        'v3_x': {
-            "${function_name}"('v3_x')
-        },
-        'v4_x': {
-            "${function_name}"('v4_x')
-        },
-        'v5_x/v5.0.0': {
-            "${function_name}"('v5_x/v5.0.0')
-        },
-        'v5_x/v5.1.0': {
-            "${function_name}"('v5_x/v5.1.0')
-        },
-        'v6_x/v6.0.0': {
-            "${function_name}"('v6_x/v6.0.0')
-        },
-        'v6_x/v6.1.0': {
-            "${function_name}"('v6_x/v6.1.0')
-        }
-    ]
-    parallel(running_set)
-}
-
 def batchSize = 10
 
 pipeline {
@@ -105,7 +75,24 @@ pipeline {
                 }
             }
             steps {
-                runFunctionSet('buildRemoteGosh')
+                def parallelStages = [:]
+                List<String> versionPaths = [
+                    'v1_x/v1.0.0',
+                    'v2_x/v2.0.0',
+                    'v3_x/v3.0.0',
+                    'v4_x/v4.0.0',
+                    'v5_x/v5.0.0',
+                    'v5_x/v5.1.0',
+                    'v6_x/v6.0.0',
+                    'v6_x/v6.1.0',
+                ]
+
+                for (versionPath in versionPaths) {
+                    parallelStages[versionPath] = {
+                        buildRemoteGosh(versionPath)
+                    }
+                }
+                parallel parallelStages
             }
         }
 
@@ -325,14 +312,15 @@ def buildDispatcher() {
     }
 }
 
-def buildRemoteGosh(version) {
+def buildRemoteGosh(String versionPath) {
     script {
+        String version = versionPath.split('/')[-1].replace('.', '_')
         if (params.DRYRUN) {
-            sh "touch linux-amd64/git-remote-gosh_${version}"
-            sh "touch linux-arm64/git-remote-gosh_${version}"
-            sh "touch darwin-amd64/git-remote-gosh_${version}"
-            sh "touch darwin-arm64/git-remote-gosh_${version}"
-            sh "touch windows-amd64/git-remote-gosh_${version}"
+            sh "touch linux-amd64/git-remote-gosh_v${version}"
+            sh "touch linux-arm64/git-remote-gosh_v${version}"
+            sh "touch darwin-amd64/git-remote-gosh_v${version}"
+            sh "touch darwin-arm64/git-remote-gosh_v${version}"
+            sh "touch windows-amd64/git-remote-gosh_v${version}"
             return true
         }
         dir("${version}/git-remote-gosh") {
@@ -341,12 +329,23 @@ def buildRemoteGosh(version) {
 
             if (params.DRYRUN) {
                 PIPELINE_1_ID = sh(
-                    script: "az pipelines build queue --definition-id 1 --branch ${COMMIT} --project gosh --variables versionNo=${version} --variables DRYRUN=true | jq -r .id",
+                    script: """
+                        az pipelines build queue --definition-id 1 --branch ${COMMIT} --project gosh \
+                            --variables versionNo=${versionPath} \
+                            --variables VERSION=${version} \
+                            --variables DRYRUN=true \
+                            | jq -r .id
+                    """,
                     returnStdout: true,
                 ).trim()
             } else {
                 PIPELINE_1_ID = sh(
-                    script: "az pipelines build queue --definition-id 1 --branch ${COMMIT} --project gosh --variables versionNo=${version} | jq -r .id",
+                    script: """
+                        az pipelines build queue --definition-id 1 --branch ${COMMIT} --project gosh \
+                            --variables versionNo=${versionPath} \
+                            --variables VERSION=${version} \
+                            | jq -r .id
+                    """,
                     returnStdout: true,
                 ).trim()
             }
