@@ -291,14 +291,17 @@ def buildDispatcher() {
             sh 'rm -rf darwin-*'
             sh 'rm -rf windows-*'
 
-            if (params.DRYRUN) {
-                sh "az pipelines runs artifact download --project gosh --artifact-name linux-amd64 --run-id ${PIPELINE_2_ID} --path linux-amd64 && sleep 2"
-            } else {
-                sh "az pipelines runs artifact download --project gosh --artifact-name linux-amd64 --run-id ${PIPELINE_2_ID} --path linux-amd64 && sleep 2"
-                sh "az pipelines runs artifact download --project gosh --artifact-name linux-arm64 --run-id ${PIPELINE_2_ID} --path linux-arm64 && sleep 2"
-                sh "az pipelines runs artifact download --project gosh --artifact-name darwin-amd64 --run-id ${PIPELINE_2_ID} --path darwin-amd64 && sleep 2"
-                sh "az pipelines runs artifact download --project gosh --artifact-name darwin-arm64 --run-id ${PIPELINE_2_ID} --path darwin-arm64 && sleep 2"
-                sh "az pipelines runs artifact download --project gosh --artifact-name windows-amd64 --run-id ${PIPELINE_2_ID} --path windows-amd64 && sleep 2"
+            retry(3) {
+                if (params.DRYRUN) {
+                    sh "az pipelines runs artifact download --project gosh --artifact-name linux-amd64 --run-id ${PIPELINE_2_ID} --path linux-amd64 && sleep 2"
+                } else {
+                    sh "az pipelines runs artifact download --project gosh --artifact-name linux-amd64 --run-id ${PIPELINE_2_ID} --path linux-amd64 && sleep 2"
+                    sh "az pipelines runs artifact download --project gosh --artifact-name linux-arm64 --run-id ${PIPELINE_2_ID} --path linux-arm64 && sleep 2"
+                    sh "az pipelines runs artifact download --project gosh --artifact-name darwin-amd64 --run-id ${PIPELINE_2_ID} --path darwin-amd64 && sleep 2"
+                    sh "az pipelines runs artifact download --project gosh --artifact-name darwin-arm64 --run-id ${PIPELINE_2_ID} --path darwin-arm64 && sleep 2"
+                    sh "az pipelines runs artifact download --project gosh --artifact-name windows-amd64 --run-id ${PIPELINE_2_ID} --path windows-amd64 && sleep 2"
+                }
+                sleep 1
             }
         }
     }
