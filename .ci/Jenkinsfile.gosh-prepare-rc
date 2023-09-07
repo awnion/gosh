@@ -89,9 +89,8 @@ pipeline {
                     ]
 
                     for (versionPath in versionPaths) {
-                        String versionPathCopy = "${versionPath}"
-                        parallelStages[versionPathCopy] = {
-                            buildRemoteGosh versionPathCopy
+                        parallelStages[versionPath] = {
+                            buildRemoteGosh "${versionPath}"
                         }
                     }
                     parallel parallelStages
@@ -634,7 +633,7 @@ def testWeb() {
 
 def prereleaseBinaries() {
     script {
-        if (!params.DRYRUN) {
+        if (true || !params.DRYRUN) {
             dir('.ci/scripts') {
                 withCredentials([string(credentialsId: 'github-gosh-release', variable: 'TOKEN')]) {
                     sh './create-github-release.sh $TOKEN ${APP_VERSION} ${COMMIT}'
