@@ -72,6 +72,21 @@ pipeline {
                 }
             }
         }
+        stage('Clean workspace') {
+            agent {
+                node {
+                    label 'jenkins-main'
+                }
+            }
+            steps {
+                script {
+                    sh "cd ${WORKSPACE}"
+                    sh 'rm -rf linux-*'
+                    sh 'rm -rf darwin-*'
+                    sh 'rm -rf windows-*'
+                }
+            }
+        }
         stage('Build: Dispatcher') {
             agent {
                 node {
@@ -80,7 +95,6 @@ pipeline {
             }
             steps {
                 buildDispatcher()
-            // buildDispatcherDebug()
             }
         }
         stage('Build: Git Helper') {
@@ -91,7 +105,6 @@ pipeline {
             }
             steps {
                 runFunctionSet('buildRemoteGosh')
-            // runFunctionSet('buildRemoteGoshDebug')
             }
         }
 
@@ -259,6 +272,15 @@ pipeline {
 // BUILD
 def buildDispatcher() {
     script {
+        if (params.DRYRUN) {
+            sh 'touch linux-amd64/git-remote-gosh'
+            sh 'touch linux-arm64/git-remote-gosh'
+            sh 'touch darwin-amd64/git-remote-gosh'
+            sh 'touch darwin-arm64/git-remote-gosh'
+            sh 'touch windows-amd64/git-remote-gosh'
+            return true
+        }
+
         dir('gosh-dispatcher') {
             String PIPELINE_2_ID
             String PIPELINE_2_STATUS = ''
@@ -285,112 +307,72 @@ def buildDispatcher() {
                     println "$PIPELINE_2_STATUS"
                 }
             }
-
-            sh "cd ${WORKSPACE}"
-            sh 'rm -rf linux-*'
-            sh 'rm -rf darwin-*'
-            sh 'rm -rf windows-*'
-
-            retry(3) {
-                if (params.DRYRUN) {
-                    sh "az pipelines runs artifact download --project gosh --artifact-name linux-amd64 --run-id ${PIPELINE_2_ID} --path linux-amd64 && sleep 2"
-                } else {
-                    sh "az pipelines runs artifact download --project gosh --artifact-name linux-amd64 --run-id ${PIPELINE_2_ID} --path linux-amd64 && sleep 2"
-                    sh "az pipelines runs artifact download --project gosh --artifact-name linux-arm64 --run-id ${PIPELINE_2_ID} --path linux-arm64 && sleep 2"
-                    sh "az pipelines runs artifact download --project gosh --artifact-name darwin-amd64 --run-id ${PIPELINE_2_ID} --path darwin-amd64 && sleep 2"
-                    sh "az pipelines runs artifact download --project gosh --artifact-name darwin-arm64 --run-id ${PIPELINE_2_ID} --path darwin-arm64 && sleep 2"
-                    sh "az pipelines runs artifact download --project gosh --artifact-name windows-amd64 --run-id ${PIPELINE_2_ID} --path windows-amd64 && sleep 2"
-                }
-                sleep 1
-            }
         }
-    }
-}
 
-def buildDispatcherDebug() {
-    script {
-        dir('gosh-dispatcher') {
-            def shExitStatus = sh script: """
-                #!/bin/bash
-                set -ex
-
-                cd ${WORKSPACE}
-                rm -rf linux-*
-                rm -rf darwin-*
-                rm -rf windows-*
-
-                az pipelines runs artifact download --project gosh --artifact-name linux-amd64 --run-id 1489 --path linux-amd64 && sleep 2
-            """, returnStatus: true
-
-            if (shExitStatus != 0) {
-                error('Failed to execute Bash script')
+        retry(3) {
+            if (params.DRYRUN) {
+                sh "az pipelines runs artifact download --project gosh --artifact-name linux-amd64 --run-id ${PIPELINE_2_ID} --path linux-amd64 && sleep 2"
+            } else {
+                sh "az pipelines runs artifact download --project gosh --artifact-name linux-amd64 --run-id ${PIPELINE_2_ID} --path linux-amd64 && sleep 2"
+                sh "az pipelines runs artifact download --project gosh --artifact-name linux-arm64 --run-id ${PIPELINE_2_ID} --path linux-arm64 && sleep 2"
+                sh "az pipelines runs artifact download --project gosh --artifact-name darwin-amd64 --run-id ${PIPELINE_2_ID} --path darwin-amd64 && sleep 2"
+                sh "az pipelines runs artifact download --project gosh --artifact-name darwin-arm64 --run-id ${PIPELINE_2_ID} --path darwin-arm64 && sleep 2"
+                sh "az pipelines runs artifact download --project gosh --artifact-name windows-amd64 --run-id ${PIPELINE_2_ID} --path windows-amd64 && sleep 2"
             }
+            sleep 1
         }
     }
 }
 
 def buildRemoteGosh(version) {
     script {
+        if (params.DRYRUN) {
+            sh "touch linux-amd64/git-remote-gosh_${version}"
+            sh "touch linux-arm64/git-remote-gosh_${version}"
+            sh "touch darwin-amd64/git-remote-gosh_${version}"
+            sh "touch darwin-arm64/git-remote-gosh_${version}"
+            sh "touch windows-amd64/git-remote-gosh_${version}"
+            return true
+        }
         dir("${version}/git-remote-gosh") {
-            def shExitStatus = sh script: """
-                #!/bin/bash
-                set -ex
+            String PIPELINE_1_ID
+            String PIPELINE_1_STATUS = ''
 
-                ### need to be executed once for each new variable
-                ### az pipelines variable create --name version --pipeline-id 1 --project gosh --allow-override true
+            if (params.DRYRUN) {
+                PIPELINE_1_ID = sh(
+                    script: "az pipelines build queue --definition-id 1 --branch ${COMMIT} --project gosh --variables versionNo=${version} --variables DRYRUN=true | jq -r .id",
+                    returnStdout: true,
+                ).trim()
+            } else {
+                PIPELINE_1_ID = sh(
+                    script: "az pipelines build queue --definition-id 1 --branch ${COMMIT} --project gosh --variables versionNo=${version} | jq -r .id",
+                    returnStdout: true,
+                ).trim()
+            }
 
-                # 1 = git-remote-gosh
-                if [ ${DRYRUN} = "true" ]; then
-                    PIPELINE_1_ID=\$(az pipelines build queue --definition-id 1 --branch ${COMMIT} --project gosh --variables versionNo=${version} DRYRUN=true | jq .id)
-                else
-                    PIPELINE_1_ID=\$(az pipelines build queue --definition-id 1 --branch ${COMMIT} --project gosh --variables versionNo=${version} | jq .id)
-                fi
-                PIPELINE_1_STATUS=inProgress
-
-                until [ \$PIPELINE_1_STATUS = "completed" ]
-                do
-                    sleep 60
-                    PIPELINE_1_STATUS=\$(az pipelines build show --project gosh --id \$PIPELINE_1_ID | jq .status | tr -d '\"')
-                done
-
-                cd ${WORKSPACE}
-                if [ "${DRYRUN}" = "true" ]; then
-                    az pipelines runs artifact download --project gosh --artifact-name linux-amd64 --run-id \$PIPELINE_1_ID --path linux-amd64 && sleep 2
-                else
-                    az pipelines runs artifact download --project gosh --artifact-name linux-amd64 --run-id \$PIPELINE_1_ID --path linux-amd64 && sleep 2
-                    az pipelines runs artifact download --project gosh --artifact-name darwin-amd64 --run-id \$PIPELINE_1_ID --path darwin-amd64 && sleep 2
-                    az pipelines runs artifact download --project gosh --artifact-name windows-amd64 --run-id \$PIPELINE_1_ID --path windows-amd64 && sleep 2
-                    az pipelines runs artifact download --project gosh --artifact-name linux-arm64 --run-id \$PIPELINE_1_ID --path linux-arm64 && sleep 2
-                    az pipelines runs artifact download --project gosh --artifact-name darwin-arm64 --run-id \$PIPELINE_1_ID --path darwin-arm64 && sleep 2
-                fi
-
-            """, returnStatus: true
-
-            if (shExitStatus != 0) {
-                error('Failed to execute Bash script')
+            timeout(time: 1, unit: 'HOURS') {
+                while (PIPELINE_1_STATUS != 'completed') {
+                    sleep time: 60, unit: 'SECONDS'
+                    PIPELINE_1_STATUS = sh(
+                        script: "az pipelines build show --project gosh --id ${PIPELINE_1_ID} | jq -r .status",
+                        returnStdout: true,
+                    ).trim()
+                    println "$PIPELINE_1_STATUS"
+                }
             }
         }
-    }
-}
 
-def buildRemoteGoshDebug(version) {
-    script {
-        dir("${version}/git-remote-gosh") {
-            def shExitStatus = sh script: """
-                #!/bin/bash
-                set -ex
-
-                cd ${WORKSPACE}
-                export VSTS_ARTIFACTTOOL_DISABLE_HARDLINKS=1
-
-                az pipelines runs artifact download --project gosh --artifact-name linux-amd64 --run-id 1494 --path linux-amd64 && sleep 2
-                az pipelines runs artifact download --project gosh --artifact-name linux-amd64 --run-id 1493 --path linux-amd64 && sleep 2
-                az pipelines runs artifact download --project gosh --artifact-name linux-amd64 --run-id 1495 --path linux-amd64 && sleep 2
-            """, returnStatus: true
-
-            if (shExitStatus != 0) {
-                error('Failed to execute Bash script')
+        retry(3) {
+            if (params.DRYRUN) {
+                sh "az pipelines runs artifact download --project gosh --artifact-name linux-amd64 --run-id ${PIPELINE_1_ID} --path linux-amd64 && sleep 2"
+            } else {
+                sh "az pipelines runs artifact download --project gosh --artifact-name linux-amd64 --run-id ${PIPELINE_1_ID} --path linux-amd64 && sleep 2"
+                sh "az pipelines runs artifact download --project gosh --artifact-name linux-arm64 --run-id ${PIPELINE_1_ID} --path linux-arm64 && sleep 2"
+                sh "az pipelines runs artifact download --project gosh --artifact-name darwin-amd64 --run-id ${PIPELINE_1_ID} --path darwin-amd64 && sleep 2"
+                sh "az pipelines runs artifact download --project gosh --artifact-name darwin-arm64 --run-id ${PIPELINE_1_ID} --path darwin-arm64 && sleep 2"
+                sh "az pipelines runs artifact download --project gosh --artifact-name windows-amd64 --run-id ${PIPELINE_1_ID} --path windows-amd64 && sleep 2"
             }
+            sleep 1
         }
     }
 }
@@ -403,17 +385,20 @@ def archiveAzureArtifacts() {
 
             rm -rf git-remote-gosh-*.tar.gz git-remote-gosh-*.exe
 
-            cd linux-amd64
-            find . -name \'git-remote-gosh_v*\' | tr -d ./ > dispatcher.ini
-            cd -
+            find . -name \'git-remote-gosh_v*\' | tr -d ./ | tee dispatcher.ini
 
             chmod +x linux-a*/git*
             chmod +x darwin-a*/git*
 
-            cp linux-amd64/dispatcher.ini linux-arm64/
-            cp linux-amd64/dispatcher.ini darwin-amd64/
-            cp linux-amd64/dispatcher.ini darwin-arm64/
-            cp linux-amd64/dispatcher.ini windows-amd64/
+            ls -la linux-a*
+            ls -la darwin-a*
+
+            cp dispatcher.ini linux-amd64/
+            cp dispatcher.ini linux-arm64/
+            cp dispatcher.ini darwin-amd64/
+            cp dispatcher.ini darwin-arm64/
+            cp dispatcher.ini windows-amd64/
+            rm -rf dispatcher.ini
 
             if [ \${DRYRUN} = "true" ]; then
                 tar -czvf git-remote-gosh-linux-amd64.tar.gz -C linux-amd64 $(ls -A linux-amd64)
@@ -551,6 +536,7 @@ def runSingleUpgradeTest(script, index, port, from, to) {
 
 def prepareHelperForTests() {
     dir("${WORKSPACE}/tests") {
+        // TODO: remove `chmod`s because we should emulate user's machine
         sh """
             #!/bin/bash
             set -e
