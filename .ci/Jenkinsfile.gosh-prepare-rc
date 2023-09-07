@@ -89,12 +89,9 @@ pipeline {
                     ]
 
                     for (versionPath in versionPaths) {
-                        parallelStages[versionPath] = {
-                            stage(versionPath) {
-                                steps {
-                                    buildRemoteGosh versionPath
-                                }
-                            }
+                        String versionPathCopy = "${versionPath}"
+                        parallelStages[versionPathCopy] = {
+                            buildRemoteGosh versionPathCopy
                         }
                     }
                     parallel parallelStages
