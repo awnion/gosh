@@ -1,33 +1,3 @@
-def runFunctionSet(function_name) {
-    running_set = [
-        'v1_x': {
-            "${function_name}"('v1_x')
-        },
-        'v2_x': {
-            "${function_name}"('v2_x')
-        },
-        'v3_x': {
-            "${function_name}"('v3_x')
-        },
-        'v4_x': {
-            "${function_name}"('v4_x')
-        },
-        'v5_x/v5.0.0': {
-            "${function_name}"('v5_x/v5.0.0')
-        },
-        'v5_x/v5.1.0': {
-            "${function_name}"('v5_x/v5.1.0')
-        },
-        'v6_x/v6.0.0': {
-            "${function_name}"('v6_x/v6.0.0')
-        },
-        'v6_x/v6.1.0': {
-            "${function_name}"('v6_x/v6.1.0')
-        }
-    ]
-    parallel(running_set)
-}
-
 def batchSize = 10
 
 pipeline {
@@ -40,6 +10,7 @@ pipeline {
     }
     parameters {
         gitParameter branchFilter: 'origin/(.*)', defaultValue: 'dev', name: 'sha1', type: 'PT_BRANCH', quickFilterEnabled: true
+        booleanParam name: 'FAKE_BINARIES', defaultValue: false, description: 'If enabled, generate fake binaries instead of Azure pipelines (for fast testing)'
         booleanParam name: 'DRYRUN', defaultValue: true, description: 'If enabled, will NOT publish pre-release artifacts to Github and Dockerhub.'
         booleanParam name: 'TEST_WEB', defaultValue: false, description: 'If enabled, will execute web tests.'
         booleanParam name: 'TEST_FUNC', defaultValue: true, description: 'If enabled, will execute func tests.'
@@ -68,7 +39,32 @@ pipeline {
                 checkout scm
                 script {
                     env.APP_VERSION = sh script: "cat version.json | jq .version | tr -d '\"\n'", returnStdout: true
-                    currentBuild.displayName = "${BUILD_NUMBER}_${COMMIT}_${APP_VERSION} DRYRUN=${DRYRUN}"
+                    currentBuild.displayName = "${BUILD_NUMBER}_${COMMIT}_${APP_VERSION}"
+                }
+
+                echo "JOB_NAME=${JOB_NAME}"
+                echo "DRYRUN=${DRYRUN}"
+                echo "FAKE_BINARIES=${FAKE_BINARIES}"
+            }
+        }
+        stage('Prepare workspace') {
+            agent {
+                node {
+                    label 'jenkins-main'
+                }
+            }
+            steps {
+                script {
+                    [
+                        'linux-amd64',
+                        'linux-arm64',
+                        'darwin-amd64',
+                        'darwin-arm64',
+                        'windows-amd64',
+                    ].each { target ->
+                        sh "rm -rf ${target}"
+                        sh "mkdir -p ${target}"
+                    }
                 }
             }
         }
@@ -80,7 +76,6 @@ pipeline {
             }
             steps {
                 buildDispatcher()
-            // buildDispatcherDebug()
             }
         }
         stage('Build: Git Helper') {
@@ -90,8 +85,20 @@ pipeline {
                 }
             }
             steps {
-                runFunctionSet('buildRemoteGosh')
-            // runFunctionSet('buildRemoteGoshDebug')
+                script {
+                    def stages = [
+                        'v1_x/v1.0.0',
+                        'v2_x/v2.0.0',
+                        'v3_x/v3.0.0',
+                        'v4_x/v4.0.0',
+                        'v5_x/v5.0.0',
+                        'v5_x/v5.1.0',
+                        'v6_x/v6.0.0',
+                        'v6_x/v6.1.0',
+                    ].collectEntries { path -> [path, { -> buildRemoteGosh path }] }
+                    stages.failFast = true
+                    parallel stages
+                }
             }
         }
 
@@ -259,6 +266,18 @@ pipeline {
 // BUILD
 def buildDispatcher() {
     script {
+        sh 'pwd'
+        if (params.FAKE_BINARIES) {
+            [
+                'linux-amd64',
+                'linux-arm64',
+                'darwin-amd64',
+                'darwin-arm64',
+                'windows-amd64'
+            ].each { target -> sh "touch ${target}/git-remote-gosh" }
+            return true
+        }
+
         dir('gosh-dispatcher') {
             String PIPELINE_2_ID
             String PIPELINE_2_STATUS = ''
@@ -285,111 +304,83 @@ def buildDispatcher() {
                     println "$PIPELINE_2_STATUS"
                 }
             }
+        }
 
-            sh "cd ${WORKSPACE}"
-            sh 'rm -rf linux-*'
-            sh 'rm -rf darwin-*'
-            sh 'rm -rf windows-*'
+        retry(3) {
+            def targets = params.DRYRUN ? ['linux-amd64'] : [
+                'linux-amd64',
+                'linux-arm64',
+                'darwin-amd64',
+                'darwin-arm64',
+                'windows-amd64'
+            ]
 
-            retry(3) {
-                if (params.DRYRUN) {
-                    sh "az pipelines runs artifact download --project gosh --artifact-name linux-amd64 --run-id ${PIPELINE_2_ID} --path linux-amd64 && sleep 2"
-                } else {
-                    sh "az pipelines runs artifact download --project gosh --artifact-name linux-amd64 --run-id ${PIPELINE_2_ID} --path linux-amd64 && sleep 2"
-                    sh "az pipelines runs artifact download --project gosh --artifact-name linux-arm64 --run-id ${PIPELINE_2_ID} --path linux-arm64 && sleep 2"
-                    sh "az pipelines runs artifact download --project gosh --artifact-name darwin-amd64 --run-id ${PIPELINE_2_ID} --path darwin-amd64 && sleep 2"
-                    sh "az pipelines runs artifact download --project gosh --artifact-name darwin-arm64 --run-id ${PIPELINE_2_ID} --path darwin-arm64 && sleep 2"
-                    sh "az pipelines runs artifact download --project gosh --artifact-name windows-amd64 --run-id ${PIPELINE_2_ID} --path windows-amd64 && sleep 2"
+            targets.each { target ->
+                sh "az pipelines runs artifact download --project gosh --artifact-name ${target} --run-id ${PIPELINE_2_ID} --path ${target}"
+                sleep 2
+            }
+        }
+    }
+}
+
+def buildRemoteGosh(String versionPath) {
+    script {
+        sh 'pwd'
+        String version = versionPath.split('/')[-1].replace('.', '_')
+        if (params.FAKE_BINARIES) {
+            [
+                'linux-amd64',
+                'linux-arm64',
+                'darwin-amd64',
+                'darwin-arm64',
+                'windows-amd64'
+            ].each { target -> sh "touch ${target}/git-remote-gosh_${version}" }
+            return true
+        }
+
+        dir("${version}/git-remote-gosh") {
+            String PIPELINE_1_ID
+            String PIPELINE_1_STATUS = ''
+
+            if (params.DRYRUN) {
+                PIPELINE_1_ID = sh(
+                    script: """
+                        az pipelines build queue --definition-id 1 --branch ${COMMIT} --project gosh \
+                            --variables versionNo=${versionPath} \
+                            --variables VERSION=${version} \
+                            --variables DRYRUN=true \
+                            | jq -r .id
+                    """,
+                    returnStdout: true,
+                ).trim()
+            } else {
+                PIPELINE_1_ID = sh(
+                    script: """
+                        az pipelines build queue --definition-id 1 --branch ${COMMIT} --project gosh \
+                            --variables versionNo=${versionPath} \
+                            --variables VERSION=${version} \
+                            | jq -r .id
+                    """,
+                    returnStdout: true,
+                ).trim()
+            }
+
+            timeout(time: 1, unit: 'HOURS') {
+                while (PIPELINE_1_STATUS != 'completed') {
+                    sleep time: 60, unit: 'SECONDS'
+                    PIPELINE_1_STATUS = sh(
+                        script: "az pipelines build show --project gosh --id ${PIPELINE_1_ID} | jq -r .status",
+                        returnStdout: true,
+                    ).trim()
+                    println "$PIPELINE_1_STATUS"
                 }
-                sleep 1
             }
         }
-    }
-}
 
-def buildDispatcherDebug() {
-    script {
-        dir('gosh-dispatcher') {
-            def shExitStatus = sh script: """
-                #!/bin/bash
-                set -ex
-
-                cd ${WORKSPACE}
-                rm -rf linux-*
-                rm -rf darwin-*
-                rm -rf windows-*
-
-                az pipelines runs artifact download --project gosh --artifact-name linux-amd64 --run-id 1489 --path linux-amd64 && sleep 2
-            """, returnStatus: true
-
-            if (shExitStatus != 0) {
-                error('Failed to execute Bash script')
-            }
-        }
-    }
-}
-
-def buildRemoteGosh(version) {
-    script {
-        dir("${version}/git-remote-gosh") {
-            def shExitStatus = sh script: """
-                #!/bin/bash
-                set -ex
-
-                ### need to be executed once for each new variable
-                ### az pipelines variable create --name version --pipeline-id 1 --project gosh --allow-override true
-
-                # 1 = git-remote-gosh
-                if [ ${DRYRUN} = "true" ]; then
-                    PIPELINE_1_ID=\$(az pipelines build queue --definition-id 1 --branch ${COMMIT} --project gosh --variables versionNo=${version} DRYRUN=true | jq .id)
-                else
-                    PIPELINE_1_ID=\$(az pipelines build queue --definition-id 1 --branch ${COMMIT} --project gosh --variables versionNo=${version} | jq .id)
-                fi
-                PIPELINE_1_STATUS=inProgress
-
-                until [ \$PIPELINE_1_STATUS = "completed" ]
-                do
-                    sleep 60
-                    PIPELINE_1_STATUS=\$(az pipelines build show --project gosh --id \$PIPELINE_1_ID | jq .status | tr -d '\"')
-                done
-
-                cd ${WORKSPACE}
-                if [ "${DRYRUN}" = "true" ]; then
-                    az pipelines runs artifact download --project gosh --artifact-name linux-amd64 --run-id \$PIPELINE_1_ID --path linux-amd64 && sleep 2
-                else
-                    az pipelines runs artifact download --project gosh --artifact-name linux-amd64 --run-id \$PIPELINE_1_ID --path linux-amd64 && sleep 2
-                    az pipelines runs artifact download --project gosh --artifact-name darwin-amd64 --run-id \$PIPELINE_1_ID --path darwin-amd64 && sleep 2
-                    az pipelines runs artifact download --project gosh --artifact-name windows-amd64 --run-id \$PIPELINE_1_ID --path windows-amd64 && sleep 2
-                    az pipelines runs artifact download --project gosh --artifact-name linux-arm64 --run-id \$PIPELINE_1_ID --path linux-arm64 && sleep 2
-                    az pipelines runs artifact download --project gosh --artifact-name darwin-arm64 --run-id \$PIPELINE_1_ID --path darwin-arm64 && sleep 2
-                fi
-
-            """, returnStatus: true
-
-            if (shExitStatus != 0) {
-                error('Failed to execute Bash script')
-            }
-        }
-    }
-}
-
-def buildRemoteGoshDebug(version) {
-    script {
-        dir("${version}/git-remote-gosh") {
-            def shExitStatus = sh script: """
-                #!/bin/bash
-                set -ex
-
-                cd ${WORKSPACE}
-                export VSTS_ARTIFACTTOOL_DISABLE_HARDLINKS=1
-
-                az pipelines runs artifact download --project gosh --artifact-name linux-amd64 --run-id 1494 --path linux-amd64 && sleep 2
-                az pipelines runs artifact download --project gosh --artifact-name linux-amd64 --run-id 1493 --path linux-amd64 && sleep 2
-                az pipelines runs artifact download --project gosh --artifact-name linux-amd64 --run-id 1495 --path linux-amd64 && sleep 2
-            """, returnStatus: true
-
-            if (shExitStatus != 0) {
-                error('Failed to execute Bash script')
+        retry(3) {
+            allTargets.each { target ->
+                sh "az pipelines runs artifact download --project gosh --artifact-name linux-amd64 --run-id ${PIPELINE_1_ID} --path ${target}"
+                sleep 2
             }
         }
     }
@@ -397,40 +388,41 @@ def buildRemoteGoshDebug(version) {
 
 def archiveAzureArtifacts() {
     script {
-        sh '''
-            #!/bin/bash
-            set -ex
+        sh 'pwd'
+        def nixTargets = [
+            'linux-amd64',
+            'linux-arm64',
+            'darwin-amd64',
+            'darwin-arm64',
+        ]
+        def allTargets = [
+            'linux-amd64',
+            'linux-arm64',
+            'darwin-amd64',
+            'darwin-arm64',
+            'windows-amd64',
+        ]
+        sh 'rm -rf git-remote-gosh-*.tar.gz git-remote-gosh-*.exe'
 
-            rm -rf git-remote-gosh-*.tar.gz git-remote-gosh-*.exe
+        // dispatcher.ini
+        sh "find . -name 'git-remote-gosh_v*' | tr -d ./ | tee dispatcher.ini"
+        nixTargets.each { target -> sh "chmod +x ${target}/git*" }
+        allTargets.each { target -> sh "cp dispatcher.ini ${target}/" }
+        sh 'rm -rf dispatcher.ini'
 
-            cd linux-amd64
-            find . -name \'git-remote-gosh_v*\' | tr -d ./ > dispatcher.ini
-            cd -
+        // log
+        allTargets.each { target -> sh "ls -lA ${target}/" }
 
-            chmod +x linux-a*/git*
-            chmod +x darwin-a*/git*
+        // prepare archives
+        nixTargets.each { target ->
+            sh "tar -czvf git-remote-gosh-${target}.tar.gz -C ${target} \$(ls -A ${target})"
+        }
 
-            cp linux-amd64/dispatcher.ini linux-arm64/
-            cp linux-amd64/dispatcher.ini darwin-amd64/
-            cp linux-amd64/dispatcher.ini darwin-arm64/
-            cp linux-amd64/dispatcher.ini windows-amd64/
+        dir('windows-amd64') {
+            sh 'zip -r git-remote-gosh-windows-amd64.zip ./* && cp git-remote-gosh-windows-amd64.zip ../'
+        }
 
-            if [ \${DRYRUN} = "true" ]; then
-                tar -czvf git-remote-gosh-linux-amd64.tar.gz -C linux-amd64 $(ls -A linux-amd64)
-            else
-
-                for TARGET_OS_ARCH in {linux-amd64,linux-arm64,darwin-amd64,darwin-arm64}; do
-                    tar -czvf git-remote-gosh-${TARGET_OS_ARCH}.tar.gz -C ${TARGET_OS_ARCH} $(ls -A ${TARGET_OS_ARCH})
-                done
-
-                # tar -czvf git-remote-gosh-linux-amd64.tar.gz -C linux-amd64 $(ls -A linux-amd64)
-                # tar -czvf git-remote-gosh-linux-arm64.tar.gz -C linux-arm64 $(ls -A linux-arm64)
-                # tar -czvf git-remote-gosh-darwin-amd64.tar.gz -C darwin-amd64 $(ls -A darwin-amd64)
-                # tar -czvf git-remote-gosh-darwin-arm64.tar.gz -C darwin-arm64 $(ls -A darwin-arm64)
-
-                cd windows-amd64 && zip -r git-remote-gosh-windows-amd64.zip ./* && cp git-remote-gosh-windows-amd64.zip ../
-            fi
-        '''
+        sh 'ls -lA'
     }
 }
 
@@ -551,6 +543,7 @@ def runSingleUpgradeTest(script, index, port, from, to) {
 
 def prepareHelperForTests() {
     dir("${WORKSPACE}/tests") {
+        // TODO: remove `chmod`s because we should emulate user's machine
         sh """
             #!/bin/bash
             set -e
@@ -649,13 +642,14 @@ def prereleaseBinaries() {
                 withCredentials([string(credentialsId: 'github-gosh-release', variable: 'TOKEN')]) {
                     sh './create-github-release.sh $TOKEN ${APP_VERSION} ${COMMIT}'
                     /// LINUX
-                    sh './github-upload-assets.sh $TOKEN ${APP_VERSION} /tmp/${JOB_NAME}/git-remote-gosh-linux-amd64.tar.gz application/gzip'
-                    sh './github-upload-assets.sh $TOKEN ${APP_VERSION} /tmp/${JOB_NAME}/git-remote-gosh-linux-arm64.tar.gz application/gzip'
+                    sh './github-upload-assets.sh $TOKEN ${APP_VERSION} /tmp/${JOB_NAME}*/git-remote-gosh-linux-amd64.tar.gz application/gzip'
+                    sh './github-upload-assets.sh $TOKEN ${APP_VERSION} /tmp/${JOB_NAME}*/git-remote-gosh-linux-arm64.tar.gz application/gzip'
                     /// MAC OS
-                    sh './github-upload-assets.sh $TOKEN ${APP_VERSION} /tmp/${JOB_NAME}/git-remote-gosh-darwin-amd64.tar.gz application/gzip'
-                    sh './github-upload-assets.sh $TOKEN ${APP_VERSION} /tmp/${JOB_NAME}/git-remote-gosh-darwin-arm64.tar.gz application/gzip'
+                    sh './github-upload-assets.sh $TOKEN ${APP_VERSION} /tmp/${JOB_NAME}*/git-remote-gosh-darwin-amd64.tar.gz application/gzip'
+                    sh './github-upload-assets.sh $TOKEN ${APP_VERSION} /tmp/${JOB_NAME}*/git-remote-gosh-darwin-arm64.tar.gz application/gzip'
                     /// WINDOWS
-                    sh './github-upload-assets.sh $TOKEN ${APP_VERSION} /tmp/${JOB_NAME}/git-remote-gosh-windows-amd64.zip application/zip'
+                    sh './github-upload-assets.sh $TOKEN ${APP_VERSION} /tmp/${JOB_NAME}*/git-remote-gosh-windows-amd64.zip application/zip'
+
                 //sh './package-deb.sh /tmp/${JOB_NAME}'
                 //sh './github-upload-assets.sh $TOKEN ${APP_VERSION} ./git-remote-gosh-windows_amd64.deb application/octet-stream'
                 //sh './github-upload-assets.sh $TOKEN ${APP_VERSION} ./git-remote-gosh-windows_arm64.deb application/octet-stream'
