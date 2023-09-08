@@ -15,6 +15,7 @@ pipeline {
         booleanParam name: 'TEST_WEB', defaultValue: false, description: 'If enabled, will execute web tests.'
         booleanParam name: 'TEST_FUNC', defaultValue: true, description: 'If enabled, will execute func tests.'
         booleanParam name: 'TEST_UPGRADE', defaultValue: true, description: 'If enabled, will execute upgrade tests.'
+        booleanParam name: 'DOCKER_EXTENSION', defaultValue: true, description: 'If enabled, deploy Docker Image for Docker Extension.'
     }
 
     stages {
@@ -661,7 +662,7 @@ def prereleaseBinaries() {
 
 def prereleaseDockerExtension() {
     script {
-        if (!params.DRYRUN) {
+        if (!params.DRYRUN && params.DOCKER_EXTENSION) {
             dir('docker-extension') {
                 withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'teamgosh-dockerhub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']]) {
                     sh 'docker login -u $USERNAME -p $PASSWORD'
