@@ -339,8 +339,8 @@ def buildRemoteGosh(String versionPath) {
             return true
         }
 
+        String PIPELINE_1_ID
         dir("${version}/git-remote-gosh") {
-            String PIPELINE_1_ID
             String PIPELINE_1_STATUS = ''
 
             if (params.DRYRUN) {
@@ -380,7 +380,7 @@ def buildRemoteGosh(String versionPath) {
 
         retry(3) {
             allTargets.each { target ->
-                sh "az pipelines runs artifact download --project gosh --artifact-name linux-amd64 --run-id ${PIPELINE_1_ID} --path ${target}"
+                sh "az pipelines runs artifact download --project gosh --artifact-name ${target} --run-id ${PIPELINE_1_ID} --path ${target}"
                 sleep 2
             }
         }
