@@ -366,7 +366,7 @@ def buildRemoteGosh(String versionPath) {
                 ).trim()
             }
 
-            timeout(time: 1, unit: 'HOURS') {
+            timeout(time: 3, unit: 'HOURS') {
                 while (PIPELINE_1_STATUS != 'completed') {
                     sleep time: 60, unit: 'SECONDS'
                     PIPELINE_1_STATUS = sh(
