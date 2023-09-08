@@ -53,4 +53,4 @@ jobs:
           which protoc
 
       - name: Build
-        run: cd gosh-dispatcher && cargo build --verbose --locked --release
+        run: cd gosh-dispatcher && cargo build --verbose --release
