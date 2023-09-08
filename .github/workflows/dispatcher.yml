@@ -13,5 +13,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+    - name: Install Protoc
+      uses: arduino/setup-protoc@v2
     - name: Build
       run: cd gosh-dispatcher && cargo build --verbose --release
