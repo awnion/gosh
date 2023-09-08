@@ -279,8 +279,8 @@ def buildDispatcher() {
             return true
         }
 
+        String PIPELINE_2_ID
         dir('gosh-dispatcher') {
-            String PIPELINE_2_ID
             String PIPELINE_2_STATUS = ''
 
             if (params.DRYRUN) {
