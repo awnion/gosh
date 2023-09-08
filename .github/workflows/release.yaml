@@ -54,6 +54,10 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+      - name: Build
+        run: |
+          cd gosh-dispatcher
+          cargo build --release --verbose
       # - uses: taiki-e/github-actions/install-rust@main
       #   with:
       #     toolchain: stable
