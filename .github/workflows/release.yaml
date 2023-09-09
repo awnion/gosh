@@ -30,15 +30,20 @@ jobs:
     strategy:
       matrix:
         name:
-          # - git-remote-gosh-darwin-arm64
-          # - git-remote-gosh-darwin-amd64
-          # - git-remote-gosh-linux-arm64
+          - git-remote-gosh-darwin-arm64
+          - git-remote-gosh-darwin-amd64
+          - git-remote-gosh-linux-arm64
           - git-remote-gosh-linux-amd64
         bin:
           - git-remote-gosh
           - git-remote-gosh_v1_0_0
           - git-remote-gosh_v2_0_0
           - git-remote-gosh_v3_0_0
+          - git-remote-gosh_v4_0_0
+          - git-remote-gosh_v5_0_0
+          - git-remote-gosh_v5_1_0
+          - git-remote-gosh_v6_0_0
+          - git-remote-gosh_v6_1_0
         include:
           ## bin
           - bin: git-remote-gosh
@@ -51,6 +56,9 @@ jobs:
             copy_abi: true
           - bin: git-remote-gosh_v3_0_0
             dir: v3_x/git-remote-gosh
+            copy_abi: true
+          - bin: git-remote-gosh_v4_0_0
+            dir: v4_x/git-remote-gosh
             copy_abi: true
 
           ## name
@@ -142,63 +150,97 @@ jobs:
     strategy:
       matrix:
         name:
-          # - git-remote-gosh-darwin-arm64
-          # - git-remote-gosh-darwin-amd64
-          # - git-remote-gosh-linux-arm64
+          - git-remote-gosh-darwin-arm64
+          - git-remote-gosh-darwin-amd64
+          - git-remote-gosh-linux-arm64
           - git-remote-gosh-linux-amd64
 
     steps:
-      - name: Make dir "${{ matrix.name }}"
-        run: |
-          mkdir -p ${{ matrix.name }}
+      - uses: actions/download-artifact@v3
 
-      - name: Download git-remote-gosh
-        uses: actions/download-artifact@v3
-        with:
-          path: ${{ matrix.name }}/git-remote-gosh
-          name: ${{ matrix.name }}--git-remote-gosh
+      - name: Display structure of downloaded files
+        run: ls -R
+      # - name: Make dir "${{ matrix.name }}"
+      #   run: |
+      #     mkdir -p ${{ matrix.name }}
 
-      - name: Download git-remote-gosh_v1_0_0
-        uses: actions/download-artifact@v3
-        with:
-          path: ${{ matrix.name }}/git-remote-gosh_v1_0_0
-          name: ${{ matrix.name }}--git-remote-gosh_v1_0_0
+      # - name: Download git-remote-gosh
+      #   uses: actions/download-artifact@v3
+      #   with:
+      #     path: ${{ matrix.name }}
+      #     name: ${{ matrix.name }}--git-remote-gosh
 
-      - name: Download git-remote-gosh_v2_0_0
-        uses: actions/download-artifact@v3
-        with:
-          path: ${{ matrix.name }}/git-remote-gosh_v2_0_0
-          name: ${{ matrix.name }}--git-remote-gosh_v2_0_0
+      # - name: Download git-remote-gosh_v1_0_0
+      #   uses: actions/download-artifact@v3
+      #   with:
+      #     path: ${{ matrix.name }}
+      #     name: ${{ matrix.name }}--git-remote-gosh_v1_0_0
 
-      - name: Download git-remote-gosh_v3_0_0
-        uses: actions/download-artifact@v3
-        with:
-          path: ${{ matrix.name }}/git-remote-gosh_v3_0_0
-          name: ${{ matrix.name }}--git-remote-gosh_v3_0_0
+      # - name: Download git-remote-gosh_v2_0_0
+      #   uses: actions/download-artifact@v3
+      #   with:
+      #     path: ${{ matrix.name }}
+      #     name: ${{ matrix.name }}--git-remote-gosh_v2_0_0
 
-      - name: Make archive
-        run: |
-          chmod +x ${{ matrix.name }}/*
-          tee <<EOF '${{ matrix.name }}/dispatcher.ini'
-          git-remote-gosh_v1_0_0
-          git-remote-gosh_v2_0_0
-          git-remote-gosh_v3_0_0
-          git-remote-gosh_v4_0_0
-          git-remote-gosh_v5_0_0
-          git-remote-gosh_v5_1_0
-          git-remote-gosh_v6_0_0
-          git-remote-gosh_v6_1_0
-          EOF
+      # - name: Download git-remote-gosh_v3_0_0
+      #   uses: actions/download-artifact@v3
+      #   with:
+      #     path: ${{ matrix.name }}
+      #     name: ${{ matrix.name }}--git-remote-gosh_v3_0_0
 
-          tar -czvf ${{ matrix.name }}.tar.gz -C ${{ matrix.name }} .
+      # - name: Download git-remote-gosh_v4_0_0
+      #   uses: actions/download-artifact@v3
+      #   with:
+      #     path: ${{ matrix.name }}
+      #     name: ${{ matrix.name }}--git-remote-gosh_v4_0_0
 
-      - name: Publish
-        uses: softprops/action-gh-release@v1
-        with:
-          prerelease: true
-          files: |
-            ${{ matrix.name }}.tar.gz
-          tag_name: rc-${{ github.ref_name }}-${{ github.run_number }}
+      # - name: Download git-remote-gosh_v5_0_0
+      #   uses: actions/download-artifact@v3
+      #   with:
+      #     path: ${{ matrix.name }}
+      #     name: ${{ matrix.name }}--git-remote-gosh_v5_0_0
+
+      # - name: Download git-remote-gosh_v5_1_0
+      #   uses: actions/download-artifact@v3
+      #   with:
+      #     path: ${{ matrix.name }}
+      #     name: ${{ matrix.name }}--git-remote-gosh_v5_1_0
+
+      # - name: Download git-remote-gosh_v6_0_0
+      #   uses: actions/download-artifact@v3
+      #   with:
+      #     path: ${{ matrix.name }}
+      #     name: ${{ matrix.name }}--git-remote-gosh_v6_0_0
+
+      # - name: Download git-remote-gosh_v6_1_0
+      #   uses: actions/download-artifact@v3
+      #   with:
+      #     path: ${{ matrix.name }}
+      #     name: ${{ matrix.name }}--git-remote-gosh_v6_1_0
+
+      # - name: Make archive
+      #   run: |
+      #     chmod +x ${{ matrix.name }}/*
+      #     tee <<EOF '${{ matrix.name }}/dispatcher.ini'
+      #     git-remote-gosh_v1_0_0
+      #     git-remote-gosh_v2_0_0
+      #     git-remote-gosh_v3_0_0
+      #     git-remote-gosh_v4_0_0
+      #     git-remote-gosh_v5_0_0
+      #     git-remote-gosh_v5_1_0
+      #     git-remote-gosh_v6_0_0
+      #     git-remote-gosh_v6_1_0
+      #     EOF
+
+      #     tar -czvf ${{ matrix.name }}.tar.gz -C ${{ matrix.name }} .
+
+      # - name: Publish
+      #   uses: softprops/action-gh-release@v1
+      #   with:
+      #     prerelease: true
+      #     files: |
+      #       ${{ matrix.name }}.tar.gz
+      #     tag_name: rc-${{ github.ref_name }}-${{ github.run_number }}
 
       # - uses: actions/download-artifact@v3
       #   with:
