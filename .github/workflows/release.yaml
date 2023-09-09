@@ -60,17 +60,29 @@ jobs:
           - bin: git-remote-gosh_v4_0_0
             dir: v4_x/git-remote-gosh
             copy_abi: true
+          - bin: git-remote-gosh_v5_0_0
+            dir: v5_x/v5.0.0/git-remote-gosh
+            copy_abi: true
+          - bin: git-remote-gosh_v5_1_0
+            dir: v5_x/v5.1.0/git-remote-gosh
+            copy_abi: true
+          - bin: git-remote-gosh_v6_0_0
+            dir: v6_x/v6.0.0/git-remote-gosh
+            copy_abi: true
+          - bin: git-remote-gosh_v6_1_0
+            dir: v6_x/v6.1.0/git-remote-gosh
+            copy_abi: true
 
           ## name
-          # - name: git-remote-gosh-darwin-arm64
-          #   os: macos-latest
-          #   target: aarch64-apple-darwin
-          # - name: git-remote-gosh-darwin-amd64
-          #   os: macos-latest
-          #   target: x86_64-apple-darwin
-          # - name: git-remote-gosh-linux-arm64
-          #   os: ubuntu-latest
-          #   target: aarch64-unknown-linux-gnu
+          - name: git-remote-gosh-darwin-arm64
+            os: macos-latest
+            target: aarch64-apple-darwin
+          - name: git-remote-gosh-darwin-amd64
+            os: macos-latest
+            target: x86_64-apple-darwin
+          - name: git-remote-gosh-linux-arm64
+            os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
           - name: git-remote-gosh-linux-amd64
             os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
