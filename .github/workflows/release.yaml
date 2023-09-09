@@ -28,14 +28,11 @@ jobs:
   build:
     runs-on: "${{ matrix.os }}"
     strategy:
-      fail-fast: false
       matrix:
-        os:
-          - ubuntu-latest
         name:
           # - git-remote-gosh-darwin-arm64
           # - git-remote-gosh-darwin-amd64
-          # - git-remote-gosh-linux-arm64
+          - git-remote-gosh-linux-arm64
           - git-remote-gosh-linux-amd64
         bin:
           - git-remote-gosh
