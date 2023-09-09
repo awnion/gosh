@@ -28,15 +28,15 @@ jobs:
           # - os: macos-latest
           #   target: x86_64-apple-darwin
           #   name: git-remote-gosh-darwin-amd64
-          # - os: ubuntu-latest
-          #   target: aarch64-unknown-linux-gnu
-          #   name: git-remote-gosh-linux-arm64
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            name: git-remote-gosh-linux-arm64
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             name: git-remote-gosh-linux-amd64
-          # - os: windows-latest
-          #   target: x86_64-pc-windows-msvc
-          #   name: git-remote-gosh-windows-amd64
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            name: git-remote-gosh-windows-amd64
 
     steps:
       - name: Checkout repo
@@ -69,12 +69,20 @@ jobs:
       - name: Build
         shell: bash
         env:
+          CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER: x86_64-linux-gnu-gcc
+          CC_x86_64_unknown_linux_gnu: x86_64-linux-gnu-gcc
+          CXX_x86_64_unknown_linux_gnu: x86_64-linux-gnu-g++
+          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
+          CC_aarch64_unknown_linux_gnu: aarch64-linux-gnu-gcc
+          CXX_aarch64_unknown_linux_gnu: aarch64-linux-gnu-g++
+          ## why?
+          # BINDGEN_EXTRA_CLANG_ARGS": '--sysroot /usr/arm-linux-gnueabi'
           CARGO_BUILD_TARGET: ${{ github.workspace }}/target
         run: |
           set -xe
 
           mkdir -p ${{ matrix.name }}
-          cat <<EOF >${{ matrix.name }}/dispatcher.ini
+          tee <<EOF ${{ matrix.name }}/dispatcher.ini
           git-remote-gosh_v1_0_0
           git-remote-gosh_v2_0_0
           git-remote-gosh_v3_0_0
