@@ -145,8 +145,7 @@ jobs:
         if: ${{ true }}
         run: |
           mkdir -p ${{ matrix.dir }}/target/${{ matrix.target }}/release
-          touch target/${{ matrix.target }}/release/${{ matrix.bin }}
-          ls -lA target/${{ matrix.target }}/release
+          touch ${{ matrix.dir }}/target/${{ matrix.target }}/release/${{ matrix.bin }}
 
       - name: Artifact ${{ matrix.name }}
         uses: actions/upload-artifact@v3
