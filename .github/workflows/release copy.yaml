@@ -26,6 +26,7 @@ env:
 
 jobs:
   build:
+    runs-on: "${{ matrix.os }}"
     strategy:
       matrix:
         name:
@@ -41,15 +42,19 @@ jobs:
           ## bin
           - bin: git-remote-gosh
             dir: gosh-dispatcher
+            name:
           - bin: git-remote-gosh_v1_0_0
             dir: v1_x/git-remote-gosh
             copy_abi: true
+            name:
           - bin: git-remote-gosh_v2_0_0
             dir: v2_x/git-remote-gosh
             copy_abi: true
+            name:
           - bin: git-remote-gosh_v3_0_0
             dir: v3_x/git-remote-gosh
             copy_abi: true
+            name:
 
           ## name
           # - name: git-remote-gosh-darwin-arm64
@@ -68,7 +73,6 @@ jobs:
           #   os: windows-latest
           #   target: x86_64-pc-windows-msvc
 
-    runs-on: "${{ matrix.os }}"
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
