@@ -159,16 +159,19 @@ jobs:
     needs:
       - build
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        name:
-          - git-remote-gosh-darwin-arm64
-          - git-remote-gosh-darwin-amd64
-          - git-remote-gosh-linux-arm64
-          - git-remote-gosh-linux-amd64
+    # strategy:
+    #   matrix:
+    #     name:
+    #       - git-remote-gosh-darwin-arm64
+    #       - git-remote-gosh-darwin-amd64
+    #       - git-remote-gosh-linux-arm64
+    #       - git-remote-gosh-linux-amd64
 
     steps:
       - uses: actions/download-artifact@v3
+
+      - name: ls -lA
+        run: ls -lA
 
       - name: Display structure of downloaded files
         run: ls -R
