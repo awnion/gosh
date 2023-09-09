@@ -81,8 +81,8 @@ jobs:
         run: |
           set -xe
 
-          mkdir -p ${{ matrix.name }}
-          tee <<EOF ${{ matrix.name }}/dispatcher.ini
+          mkdir -p '${{ matrix.name }}'
+          tee <<EOF '${{ matrix.name }}/dispatcher.ini'
           git-remote-gosh_v1_0_0
           git-remote-gosh_v2_0_0
           git-remote-gosh_v3_0_0
