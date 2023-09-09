@@ -26,7 +26,6 @@ env:
 
 jobs:
   build:
-    runs-on: "${{ matrix.os }}"
     strategy:
       matrix:
         name:
@@ -69,6 +68,7 @@ jobs:
           #   os: windows-latest
           #   target: x86_64-pc-windows-msvc
 
+    runs-on: "${{ matrix.os }}"
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
