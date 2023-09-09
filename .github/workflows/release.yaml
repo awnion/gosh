@@ -114,18 +114,25 @@ jobs:
       #   working-directory: ${{ matrix.dir }}
       #   run: make copy_abi
 
-      - name: Build Binary ${{ matrix.dir }}/target/${{ matrix.target }}/release/${{ matrix.name }}
+      - name: Build Binary ${{ matrix.dir }}/target/${{ matrix.target }}/release/${{ matrix.bin }}
         working-directory: ${{ matrix.dir }}
+        if: ${{ false }}
         run: |
-          # cargo build --release --target=${{ matrix.target }}
+          cargo build --release --target=${{ matrix.target }}
+          ls -lA target/${{ matrix.target }}/release
+
+      - name: FAKE Build Binary ${{ matrix.dir }}/target/${{ matrix.target }}/release/${{ matrix.bin }}
+        working-directory: ${{ matrix.dir }}
+        if: ${{ true }}
+        run: |
           mkdir -p target/${{ matrix.target }}/release
-          touch target/${{ matrix.target }}/release/${{ matrix.name }}
+          touch target/${{ matrix.target }}/release/${{ matrix.bin }}
           ls -lA target/${{ matrix.target }}/release
 
       - name: Artifact ${{ matrix.name }}
         uses: actions/upload-artifact@v3
         with:
-          path: ${{ matrix.dir }}/target/${{ matrix.target }}/release/${{ matrix.name }}
+          path: ${{ matrix.dir }}/target/${{ matrix.target }}/release/${{ matrix.bin }}
           name: ${{ matrix.name }}--${{ matrix.bin }}
 
   release:
