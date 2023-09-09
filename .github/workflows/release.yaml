@@ -117,16 +117,12 @@ jobs:
       - name: Build Binary ${{ matrix.name }}
         working-directory: ${{ matrix.dir }}
         run: |
-          cargo build --release --target=${{ matrix.target }}
-
-      - name: Artifact ${{ matrix.name }}
-        working-directory: ${{ matrix.dir }}
-        run: |
           # cargo build --release --target=${{ matrix.target }}
           mkdir -p ${{ matrix.dir }}/target/${{ matrix.target }}/release/
           touch ${{ matrix.dir }}/target/${{ matrix.target }}/release/${{ matrix.name }}
 
-      - uses: actions/upload-artifact@v3
+      - name: Artifact ${{ matrix.name }}
+        uses: actions/upload-artifact@v3
         with:
           path: ${{ matrix.dir }}/target/${{ matrix.target }}/release/${{ matrix.name }}
           name: ${{ matrix.name }}--${{ matrix.bin }}
