@@ -46,14 +46,15 @@ jobs:
             os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
           ## bin
-          - bin: git-remote-gosh
-            dir: gosh-dispatcher
+          # - bin: git-remote-gosh
+          #   dir: gosh-dispatcher
           - bin: git-remote-gosh_v1_0_0
             dir: v1_x/git-remote-gosh
-          - bin: git-remote-gosh_v2_0_0
-            dir: v2_x/git-remote-gosh
-          - bin: git-remote-gosh_v3_0_0
-            dir: v3_x/git-remote-gosh
+            copy_abi: true
+          # - bin: git-remote-gosh_v2_0_0
+          #   dir: v2_x/git-remote-gosh
+          # - bin: git-remote-gosh_v3_0_0
+          #   dir: v3_x/git-remote-gosh
 
           ## name
           # - name: git-remote-gosh-darwin-arm64
