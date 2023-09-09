@@ -1,6 +1,10 @@
-name: Release
+name: Prerelease
 
-on: workflow_dispatch
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - dev
 
 permissions:
   contents: write
@@ -173,65 +177,12 @@ jobs:
       - name: Display structure of downloaded files
         run: ls -R
 
+      ## IMPORTANT! only works with non-windows binaries
       - name: Gather all binaries "${{ matrix.name }}"
         run: |
           mkdir -p ${{ matrix.name }}
           cp ${{ matrix.name }}--*/* ${{ matrix.name }}
           ls -lA ${{ matrix.name }}
-
-      # - name: Download git-remote-gosh
-      #   uses: actions/download-artifact@v3
-      #   with:
-      #     path: ${{ matrix.name }}
-      #     name: ${{ matrix.name }}--git-remote-gosh
-
-      # - name: Download git-remote-gosh_v1_0_0
-      #   uses: actions/download-artifact@v3
-      #   with:
-      #     path: ${{ matrix.name }}
-      #     name: ${{ matrix.name }}--git-remote-gosh_v1_0_0
-
-      # - name: Download git-remote-gosh_v2_0_0
-      #   uses: actions/download-artifact@v3
-      #   with:
-      #     path: ${{ matrix.name }}
-      #     name: ${{ matrix.name }}--git-remote-gosh_v2_0_0
-
-      # - name: Download git-remote-gosh_v3_0_0
-      #   uses: actions/download-artifact@v3
-      #   with:
-      #     path: ${{ matrix.name }}
-      #     name: ${{ matrix.name }}--git-remote-gosh_v3_0_0
-
-      # - name: Download git-remote-gosh_v4_0_0
-      #   uses: actions/download-artifact@v3
-      #   with:
-      #     path: ${{ matrix.name }}
-      #     name: ${{ matrix.name }}--git-remote-gosh_v4_0_0
-
-      # - name: Download git-remote-gosh_v5_0_0
-      #   uses: actions/download-artifact@v3
-      #   with:
-      #     path: ${{ matrix.name }}
-      #     name: ${{ matrix.name }}--git-remote-gosh_v5_0_0
-
-      # - name: Download git-remote-gosh_v5_1_0
-      #   uses: actions/download-artifact@v3
-      #   with:
-      #     path: ${{ matrix.name }}
-      #     name: ${{ matrix.name }}--git-remote-gosh_v5_1_0
-
-      # - name: Download git-remote-gosh_v6_0_0
-      #   uses: actions/download-artifact@v3
-      #   with:
-      #     path: ${{ matrix.name }}
-      #     name: ${{ matrix.name }}--git-remote-gosh_v6_0_0
-
-      # - name: Download git-remote-gosh_v6_1_0
-      #   uses: actions/download-artifact@v3
-      #   with:
-      #     path: ${{ matrix.name }}
-      #     name: ${{ matrix.name }}--git-remote-gosh_v6_1_0
 
       - name: Make archive
         run: |
@@ -256,71 +207,3 @@ jobs:
           files: |
             ${{ matrix.name }}.tar.gz
           tag_name: rc-${{ github.ref_name }}-${{ github.run_number }}
-
-      # - uses: actions/download-artifact@v3
-      #   with:
-      #     path: target/${{ matrix.target }}/release/rust-openssl-windows
-      #     name: ${{ matrix.name }}
-
-      # # - name: Add cross compile Win tools
-      # #   if: ${{ matrix.os == 'windows-latest' }}
-      # #   shell: bash
-      # #   run: |
-      # #     choco install openssl
-
-      # - name: Build dispatcher
-      #   shell: bash
-      #   run: |
-      #     mkdir -p '${{ matrix.name }}'
-      #     tee <<EOF '${{ matrix.name }}/dispatcher.ini'
-      #     git-remote-gosh_v1_0_0
-      #     git-remote-gosh_v2_0_0
-      #     git-remote-gosh_v3_0_0
-      #     git-remote-gosh_v4_0_0
-      #     git-remote-gosh_v5_0_0
-      #     git-remote-gosh_v5_1_0
-      #     git-remote-gosh_v6_0_0
-      #     git-remote-gosh_v6_1_0
-      #     EOF
-
-      #     cd gosh-dispatcher
-      #     cargo build --release --target=${{ matrix.target }}
-      #     mv target/${{ matrix.target }}/release/git-remote-gosh* '${{ github.workspace }}/${{ matrix.name }}'
-      #     rm -rf target
-
-      # - name: Build 6.1.0
-      #   shell: bash
-      #   run: |
-      #     cd v6_x/v6.1.0/git-remote-gosh
-      #     make copy_abi
-      #     cargo build --release --target=${{ matrix.target }}
-      #     mv target/${{ matrix.target }}/release/git-remote-gosh* '${{ github.workspace }}/${{ matrix.name }}'
-      #     rm -rf target
-
-      # - uses: actions/upload-artifact@v3
-      #   with:
-      #     name: git-remote-gosh-${{ matrix.name }}
-      #     path: ${{ matrix.name }}
-
-      # # - name: Build Archive *nix
-      # #   shell: bash
-      # #   if: ${{ runner.os != 'Windows'}}
-      # #   run: |
-      # #     ls -lA ${{ matrix.name }}
-      # #     tar -czvf '${{ matrix.name }}.tar.gz' -C '${{ matrix.name }}' .
-
-      # # - name: Build Archive Windows
-      # #   shell: bash
-      # #   if: ${{ runner.os == 'Windows'}}
-      # #   run: |
-      # #     ls -lA ${{ matrix.name }}
-      # #     tar -czvf '${{ matrix.name }}.tar.gz' -C '${{ matrix.name }}' .
-
-      # # - name: Publish
-      # #   uses: softprops/action-gh-release@v1
-      # #   with:
-      # #     prerelease: true
-      # #     files: |
-      # #       ${{ matrix.name }}.tar.gz
-      # #   env:
-      # #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
