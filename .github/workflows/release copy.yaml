@@ -46,8 +46,8 @@ jobs:
             os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
           # ## bin
-          # - bin: git-remote-gosh
-          #   dir: gosh-dispatcher
+          - bin: git-remote-gosh
+            dir: gosh-dispatcher
           #   name:
           # - bin: git-remote-gosh_v1_0_0
           #   dir: v1_x/git-remote-gosh
