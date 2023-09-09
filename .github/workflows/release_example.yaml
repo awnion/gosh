@@ -1,4 +1,4 @@
-name: Release
+name: Release old
 
 permissions:
   # TODO: once `releases: write` is supported, use it instead.
