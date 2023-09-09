@@ -50,6 +50,9 @@ jobs:
           - bin: git-remote-gosh_v2_0_0
             dir: v2_x/git-remote-gosh
             copy_abi: true
+          - bin: git-remote-gosh_v3_0_0
+            dir: v3_x/git-remote-gosh
+            copy_abi: true
 
           ## name
           # - name: git-remote-gosh-darwin-arm64
@@ -58,9 +61,9 @@ jobs:
           # - name: git-remote-gosh-darwin-amd64
           #   os: macos-latest
           #   target: x86_64-apple-darwin
-          - name: git-remote-gosh-linux-arm64
-            os: ubuntu-latest
-            target: aarch64-unknown-linux-gnu
+          # - name: git-remote-gosh-linux-arm64
+          #   os: ubuntu-latest
+          #   target: aarch64-unknown-linux-gnu
           - name: git-remote-gosh-linux-amd64
             os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
@@ -97,8 +100,8 @@ jobs:
         if: ${{ matrix.target == 'aarch64-unknown-linux-gnu' }}
         shell: bash
         run: |
-          apt update -y
-          apt install -y build-essential g++-x86-64-linux-gnu libc6-dev-amd64-cross g++-aarch64-linux-gnu libc6-dev-arm64-cross gcc-aarch64-linux-gnu
+          sudo apt update -y
+          sudo apt install -y build-essential g++-x86-64-linux-gnu libc6-dev-amd64-cross g++-aarch64-linux-gnu libc6-dev-arm64-cross gcc-aarch64-linux-gnu
           rustup target add aarch64-unknown-linux-gnu
 
       - name: Install Protoc
