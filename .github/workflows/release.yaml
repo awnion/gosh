@@ -108,15 +108,6 @@ jobs:
           mv target/${{ matrix.target }}/release/git-remote-gosh* '${{ github.workspace }}/${{ matrix.name }}'
           rm -rf target
 
-      - name: Build 6.0.0
-        shell: bash
-        run: |
-          cd v6_x/v6.0.0/git-remote-gosh
-          make copy_abi
-          cargo build --release --target=${{ matrix.target }}
-          mv target/${{ matrix.target }}/release/git-remote-gosh* '${{ github.workspace }}/${{ matrix.name }}'
-          rm -rf target
-
       - name: Build 6.1.0
         shell: bash
         run: |
