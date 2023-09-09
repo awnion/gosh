@@ -139,12 +139,9 @@ jobs:
           - git-remote-gosh-linux-amd64
 
     steps:
-      - name: Make dir
+      - name: Make dir "${{ matrix.name }}"
         run: |
           mkdir -p ${{ matrix.name }}
-            - git-remote-gosh
-            - git-remote-gosh_v1_0_0
-            - git-remote-gosh_v2_0_0
 
       - name: Download git-remote-gosh
         uses: actions/download-artifact@v3
@@ -163,6 +160,12 @@ jobs:
         with:
           path: ${{ matrix.name }}/git-remote-gosh_v2_0_0
           name: ${{ matrix.name }}--git-remote-gosh_v2_0_0
+
+      - name: Download git-remote-gosh_v3_0_0
+        uses: actions/download-artifact@v3
+        with:
+          path: ${{ matrix.name }}/git-remote-gosh_v3_0_0
+          name: ${{ matrix.name }}--git-remote-gosh_v3_0_0
 
       - name: Make archive
         run: |
