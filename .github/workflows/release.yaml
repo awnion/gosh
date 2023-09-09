@@ -93,22 +93,22 @@ jobs:
           git-remote-gosh_v6_1_0
           EOF
 
-          cd ${{ github.workspace }}/gosh-dispatcher
+          cd '${{ github.workspace }}/gosh-dispatcher'
           cargo build --release --target=${{ matrix.target }}
 
-          cd ${{ github.workspace }}/v6_x/v6.0.0/git-remote-gosh
+          cd '${{ github.workspace }}/v6_x/v6.0.0/git-remote-gosh'
           make copy_abi
           cargo build --release --target=${{ matrix.target }}
 
-          cd ${{ github.workspace }}/v6_x/v6.1.0/git-remote-gosh
+          cd '${{ github.workspace }}/v6_x/v6.1.0/git-remote-gosh'
           make copy_abi
           cargo build --release --target=${{ matrix.target }}
 
-          mv ${{ github.workspace }}/target/${{ matrix.target }}/release/git-remote-gosh* ${{ github.workspace }}/${{ matrix.name }}/
+          mv '${{ github.workspace }}/target/${{ matrix.target }}/release/git-remote-gosh'* '${{ github.workspace }}/${{ matrix.name }}/'
 
-          ls -lA ${{ github.workspace }}/${{ matrix.name }}
-          cd ${{ github.workspace }}
-          tar -czvf ${{ matrix.name }}.tar.gz -C ${{ matrix.name }} .
+          ls -lA '${{ github.workspace }}/${{ matrix.name }}'
+          cd '${{ github.workspace }}'
+          tar -czvf '${{ matrix.name }}.tar.gz' -C '${{ matrix.name }}' .
 
       - name: Publish
         uses: softprops/action-gh-release@v1
