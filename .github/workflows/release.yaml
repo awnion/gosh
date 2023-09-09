@@ -14,6 +14,14 @@ env:
   RUSTUP_MAX_RETRIES: 10
   CARGO_PROFILE_RELEASE_CODEGEN_UNITS: 1
   CARGO_PROFILE_RELEASE_LTO: true
+  CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER: x86_64-linux-gnu-gcc
+  CC_x86_64_unknown_linux_gnu: x86_64-linux-gnu-gcc
+  CXX_x86_64_unknown_linux_gnu: x86_64-linux-gnu-g++
+  CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
+  CC_aarch64_unknown_linux_gnu: aarch64-linux-gnu-gcc
+  CXX_aarch64_unknown_linux_gnu: aarch64-linux-gnu-g++
+  ## TODO: why?
+  # BINDGEN_EXTRA_CLANG_ARGS": '--sysroot /usr/arm-linux-gnueabi'
 
 jobs:
   build:
@@ -68,26 +76,15 @@ jobs:
 
       - name: Add cross compile Linux tools
         if: ${{ matrix.target == 'aarch64-unknown-linux-gnu' }}
+        shell: bash
         run: |
           sudo apt update -y
           sudo apt install -y build-essential g++-x86-64-linux-gnu libc6-dev-amd64-cross g++-aarch64-linux-gnu libc6-dev-arm64-cross gcc-aarch64-linux-gnu
           rustup target add aarch64-unknown-linux-gnu
 
-      - name: Build
+      - name: Build dispatcher
         shell: bash
-        env:
-          CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER: x86_64-linux-gnu-gcc
-          CC_x86_64_unknown_linux_gnu: x86_64-linux-gnu-gcc
-          CXX_x86_64_unknown_linux_gnu: x86_64-linux-gnu-g++
-          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
-          CC_aarch64_unknown_linux_gnu: aarch64-linux-gnu-gcc
-          CXX_aarch64_unknown_linux_gnu: aarch64-linux-gnu-g++
-          ## why?
-          # BINDGEN_EXTRA_CLANG_ARGS": '--sysroot /usr/arm-linux-gnueabi'
-          CARGO_BUILD_TARGET: ${{ github.workspace }}/target
         run: |
-          set -xe
-
           mkdir -p '${{ matrix.name }}'
           tee <<EOF '${{ matrix.name }}/dispatcher.ini'
           git-remote-gosh_v1_0_0
@@ -100,28 +97,53 @@ jobs:
           git-remote-gosh_v6_1_0
           EOF
 
-          cd '${{ github.workspace }}/gosh-dispatcher'
+          cd gosh-dispatcher
           cargo build --release --target=${{ matrix.target }}
+          mv target/${{ matrix.target }}/release/git-remote-gosh* '${{ github.workspace }}/${{ matrix.name }}'
+          rm -rf target
 
-          cd '${{ github.workspace }}/v6_x/v6.0.0/git-remote-gosh'
+      - name: Build 6.0.0
+        shell: bash
+        run: |
+          cd v6_x/v6.0.0/git-remote-gosh
           make copy_abi
           cargo build --release --target=${{ matrix.target }}
+          mv target/${{ matrix.target }}/release/git-remote-gosh* '${{ github.workspace }}/${{ matrix.name }}'
+          rm -rf target
 
-          cd '${{ github.workspace }}/v6_x/v6.1.0/git-remote-gosh'
+      - name: Build 6.1.0
+        shell: bash
+        run: |
+          cd v6_x/v6.1.0/git-remote-gosh
           make copy_abi
           cargo build --release --target=${{ matrix.target }}
+          mv target/${{ matrix.target }}/release/git-remote-gosh* '${{ github.workspace }}/${{ matrix.name }}'
+          rm -rf target
 
-          mv '${{ github.workspace }}/target/${{ matrix.target }}/release/git-remote-gosh'* '${{ github.workspace }}/${{ matrix.name }}/'
-
-          ls -lA '${{ github.workspace }}/${{ matrix.name }}'
-          cd '${{ github.workspace }}'
-          tar -czvf '${{ matrix.name }}.tar.gz' -C '${{ matrix.name }}' .
-
-      - name: Publish
-        uses: softprops/action-gh-release@v1
+      - uses: actions/upload-artifact@v3
         with:
-          prerelease: true
-          files: |
-            ${{ matrix.name }}.tar.gz
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          name: git-remote-gosh-${{ matrix.name }}
+          path: ${{ matrix.name }}
+
+      # - name: Build Archive *nix
+      #   shell: bash
+      #   if: ${{ runner.os != 'Windows'}}
+      #   run: |
+      #     ls -lA ${{ matrix.name }}
+      #     tar -czvf '${{ matrix.name }}.tar.gz' -C '${{ matrix.name }}' .
+
+      # - name: Build Archive Windows
+      #   shell: bash
+      #   if: ${{ runner.os == 'Windows'}}
+      #   run: |
+      #     ls -lA ${{ matrix.name }}
+      #     tar -czvf '${{ matrix.name }}.tar.gz' -C '${{ matrix.name }}' .
+
+      # - name: Publish
+      #   uses: softprops/action-gh-release@v1
+      #   with:
+      #     prerelease: true
+      #     files: |
+      #       ${{ matrix.name }}.tar.gz
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
