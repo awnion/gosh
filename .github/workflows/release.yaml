@@ -159,25 +159,26 @@ jobs:
     needs:
       - build
     runs-on: ubuntu-latest
-    # strategy:
-    #   matrix:
-    #     name:
-    #       - git-remote-gosh-darwin-arm64
-    #       - git-remote-gosh-darwin-amd64
-    #       - git-remote-gosh-linux-arm64
-    #       - git-remote-gosh-linux-amd64
+    strategy:
+      matrix:
+        name:
+          - git-remote-gosh-darwin-arm64
+          - git-remote-gosh-darwin-amd64
+          - git-remote-gosh-linux-arm64
+          - git-remote-gosh-linux-amd64
 
     steps:
-      - uses: actions/download-artifact@v3
-
-      - name: ls -lA
-        run: ls -lA
+      - name: Download all artifacts
+        uses: actions/download-artifact@v3
 
       - name: Display structure of downloaded files
         run: ls -R
-      # - name: Make dir "${{ matrix.name }}"
-      #   run: |
-      #     mkdir -p ${{ matrix.name }}
+
+      - name: Gather all binaries "${{ matrix.name }}"
+        run: |
+          mkdir -p ${{ matrix.name }}
+          cp ${{ matrix.name }}--*/* ${{ matrix.name }}
+          ls -lA ${{ matrix.name }}
 
       # - name: Download git-remote-gosh
       #   uses: actions/download-artifact@v3
@@ -233,29 +234,29 @@ jobs:
       #     path: ${{ matrix.name }}
       #     name: ${{ matrix.name }}--git-remote-gosh_v6_1_0
 
-      # - name: Make archive
-      #   run: |
-      #     chmod +x ${{ matrix.name }}/*
-      #     tee <<EOF '${{ matrix.name }}/dispatcher.ini'
-      #     git-remote-gosh_v1_0_0
-      #     git-remote-gosh_v2_0_0
-      #     git-remote-gosh_v3_0_0
-      #     git-remote-gosh_v4_0_0
-      #     git-remote-gosh_v5_0_0
-      #     git-remote-gosh_v5_1_0
-      #     git-remote-gosh_v6_0_0
-      #     git-remote-gosh_v6_1_0
-      #     EOF
+      - name: Make archive
+        run: |
+          chmod +x ${{ matrix.name }}/*
+          tee <<EOF '${{ matrix.name }}/dispatcher.ini'
+          git-remote-gosh_v1_0_0
+          git-remote-gosh_v2_0_0
+          git-remote-gosh_v3_0_0
+          git-remote-gosh_v4_0_0
+          git-remote-gosh_v5_0_0
+          git-remote-gosh_v5_1_0
+          git-remote-gosh_v6_0_0
+          git-remote-gosh_v6_1_0
+          EOF
 
-      #     tar -czvf ${{ matrix.name }}.tar.gz -C ${{ matrix.name }} .
+          tar -czvf ${{ matrix.name }}.tar.gz -C ${{ matrix.name }} .
 
-      # - name: Publish
-      #   uses: softprops/action-gh-release@v1
-      #   with:
-      #     prerelease: true
-      #     files: |
-      #       ${{ matrix.name }}.tar.gz
-      #     tag_name: rc-${{ github.ref_name }}-${{ github.run_number }}
+      - name: Publish
+        uses: softprops/action-gh-release@v1
+        with:
+          prerelease: true
+          files: |
+            ${{ matrix.name }}.tar.gz
+          tag_name: rc-${{ github.ref_name }}-${{ github.run_number }}
 
       # - uses: actions/download-artifact@v3
       #   with:
