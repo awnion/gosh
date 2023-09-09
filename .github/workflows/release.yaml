@@ -142,10 +142,9 @@ jobs:
           ls -lA target/${{ matrix.target }}/release
 
       - name: FAKE Build Binary ${{ matrix.dir }}/target/${{ matrix.target }}/release/${{ matrix.bin }}
-        working-directory: ${{ matrix.dir }}
         if: ${{ true }}
         run: |
-          mkdir -p target/${{ matrix.target }}/release
+          mkdir -p ${{ matrix.dir }}/target/${{ matrix.target }}/release
           touch target/${{ matrix.target }}/release/${{ matrix.bin }}
           ls -lA target/${{ matrix.target }}/release
 
