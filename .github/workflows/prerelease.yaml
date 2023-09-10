@@ -96,8 +96,8 @@ jobs:
           #   target: x86_64-pc-windows-msvc
 
     steps:
-      # - name: Checkout repo
-      #   uses: actions/checkout@v4
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
       - name: Set VERSION
         id: version
@@ -214,4 +214,5 @@ jobs:
           prerelease: true
           files: |
             ${{ matrix.name }}.tar.gz
-          tag_name: rc-${{ job.build.version.outputs.VERSION || 'no-version' }}-${{ github.ref_name }}-${{ github.run_number }}
+          tag_name: rc-${{ env.VERSION || 'no-version' }}-${{ github.ref_name }}-${{ github.run_number }}
+          # tag_name: rc-${{ job.build.version.outputs.VERSION || 'no-version' }}-${{ github.ref_name }}-${{ github.run_number }}
