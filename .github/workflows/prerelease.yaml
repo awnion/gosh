@@ -165,6 +165,8 @@ jobs:
         with:
           path: ${{ matrix.dir }}/target/${{ matrix.target }}/release/${{ matrix.bin }}
           name: ${{ matrix.name }}--${{ matrix.bin }}
+    outputs:
+      version: ${{ steps.version.outputs.VERSION }}
 
   release:
     needs:
@@ -214,5 +216,4 @@ jobs:
           prerelease: true
           files: |
             ${{ matrix.name }}.tar.gz
-          tag_name: rc-${{ env.VERSION || 'no-version' }}-${{ github.ref_name }}-${{ github.run_number }}
-          # tag_name: rc-${{ job.build.version.outputs.VERSION || 'no-version' }}-${{ github.ref_name }}-${{ github.run_number }}
+          tag_name: rc-${{ needs.build.outputs.version || 'no-version' }}-${{ github.ref_name }}-${{ github.run_number }}
