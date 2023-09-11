@@ -129,9 +129,15 @@ jobs:
       - name: Add cross compile Linux tools
         if: ${{ matrix.target == 'aarch64-unknown-linux-gnu' }}
         shell: bash
+        env:
+          packages: >
+            libssl-dev
+            build-essential
+            g++-aarch64-linux-gnu
+            libc6-dev-arm64-cross
+            gcc-aarch64-linux-gnu
         run: |
-          sudo apt update -y
-          sudo apt install -y build-essential g++-x86-64-linux-gnu libc6-dev-amd64-cross g++-aarch64-linux-gnu libc6-dev-arm64-cross gcc-aarch64-linux-gnu
+          sudo apt-get update -y && sudo apt-get install -y $packages
           rustup target add aarch64-unknown-linux-gnu
 
       - name: Install Protoc
