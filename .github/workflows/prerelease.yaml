@@ -28,7 +28,6 @@ env:
   ## TODO: why?
   # BINDGEN_EXTRA_CLANG_ARGS": '--sysroot /usr/arm-linux-gnueabi'
   RUSTFLAGS: -C target-feature=+crt-static
-  OPENSSL_NO_VENDOR: 1
 
 jobs:
   build:
@@ -37,24 +36,24 @@ jobs:
       fail-fast: false
       matrix:
         name:
-          - git-remote-gosh-darwin-arm64
-          - git-remote-gosh-darwin-amd64
+          # - git-remote-gosh-darwin-arm64
+          # - git-remote-gosh-darwin-amd64
           - git-remote-gosh-linux-arm64
           - git-remote-gosh-linux-amd64
         bin:
-          - git-remote-gosh
+          # - git-remote-gosh
           # - git-remote-gosh_v1_0_0
           # - git-remote-gosh_v2_0_0
           # - git-remote-gosh_v3_0_0
-          # - git-remote-gosh_v4_0_0
+          - git-remote-gosh_v4_0_0
           # - git-remote-gosh_v5_0_0
           # - git-remote-gosh_v5_1_0
           # - git-remote-gosh_v6_0_0
-          - git-remote-gosh_v6_1_0
+          # - git-remote-gosh_v6_1_0
         include:
           ## bin
-          - bin: git-remote-gosh
-            dir: gosh-dispatcher
+          # - bin: git-remote-gosh
+          #   dir: gosh-dispatcher
           # - bin: git-remote-gosh_v1_0_0
           #   dir: v1_x/git-remote-gosh
           #   copy_abi: true
@@ -64,9 +63,9 @@ jobs:
           # - bin: git-remote-gosh_v3_0_0
           #   dir: v3_x/git-remote-gosh
           #   copy_abi: true
-          # - bin: git-remote-gosh_v4_0_0
-          #   dir: v4_x/git-remote-gosh
-          #   copy_abi: true
+          - bin: git-remote-gosh_v4_0_0
+            dir: v4_x/git-remote-gosh
+            copy_abi: true
           # - bin: git-remote-gosh_v5_0_0
           #   dir: v5_x/v5.0.0/git-remote-gosh
           #   copy_abi: true
@@ -76,17 +75,17 @@ jobs:
           # - bin: git-remote-gosh_v6_0_0
           #   dir: v6_x/v6.0.0/git-remote-gosh
           #   copy_abi: true
-          - bin: git-remote-gosh_v6_1_0
-            dir: v6_x/v6.1.0/git-remote-gosh
-            copy_abi: true
+          # - bin: git-remote-gosh_v6_1_0
+          #   dir: v6_x/v6.1.0/git-remote-gosh
+          #   copy_abi: true
 
           ## name
-          - name: git-remote-gosh-darwin-arm64
-            os: macos-12
-            target: aarch64-apple-darwin
-          - name: git-remote-gosh-darwin-amd64
-            os: macos-12
-            target: x86_64-apple-darwin
+          # - name: git-remote-gosh-darwin-arm64
+          #   os: macos-12
+          #   target: aarch64-apple-darwin
+          # - name: git-remote-gosh-darwin-amd64
+          #   os: macos-12
+          #   target: x86_64-apple-darwin
           - name: git-remote-gosh-linux-arm64
             os: ubuntu-22.04
             target: aarch64-unknown-linux-gnu
