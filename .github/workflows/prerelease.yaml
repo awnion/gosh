@@ -24,7 +24,6 @@ env:
   CC_aarch64_unknown_linux_gnu: aarch64-linux-gnu-gcc
   CXX_aarch64_unknown_linux_gnu: aarch64-linux-gnu-g++
   RUSTFLAGS: -C target-feature=+crt-static
-  # OPENSSL_NO_VENDOR: 1
 
 jobs:
   build:
@@ -39,10 +38,10 @@ jobs:
           - git-remote-gosh-linux-amd64
         bin:
           # - git-remote-gosh
-          - git-remote-gosh_v1_0_0
+          # - git-remote-gosh_v1_0_0
           # - git-remote-gosh_v2_0_0
           # - git-remote-gosh_v3_0_0
-          # - git-remote-gosh_v4_0_0
+          - git-remote-gosh_v4_0_0
           # - git-remote-gosh_v5_0_0
           # - git-remote-gosh_v5_1_0
           # - git-remote-gosh_v6_0_0
@@ -51,18 +50,18 @@ jobs:
           ## bin
           # - bin: git-remote-gosh
           #   dir: gosh-dispatcher
-          - bin: git-remote-gosh_v1_0_0
-            dir: v1_x/git-remote-gosh
-            copy_abi: true
+          # - bin: git-remote-gosh_v1_0_0
+          #   dir: v1_x/git-remote-gosh
+          #   copy_abi: true
           # - bin: git-remote-gosh_v2_0_0
           #   dir: v2_x/git-remote-gosh
           #   copy_abi: true
           # - bin: git-remote-gosh_v3_0_0
           #   dir: v3_x/git-remote-gosh
           #   copy_abi: true
-          # - bin: git-remote-gosh_v4_0_0
-          #   dir: v4_x/git-remote-gosh
-          #   copy_abi: true
+          - bin: git-remote-gosh_v4_0_0
+            dir: v4_x/git-remote-gosh
+            copy_abi: true
           # - bin: git-remote-gosh_v5_0_0
           #   dir: v5_x/v5.0.0/git-remote-gosh
           #   copy_abi: true
@@ -124,6 +123,7 @@ jobs:
         if: ${{ matrix.target == 'aarch64-unknown-linux-gnu' }}
         env:
           packages: >
+            librocksdb-dev
             libssl-dev
             build-essential
             g++-aarch64-linux-gnu
