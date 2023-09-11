@@ -24,7 +24,7 @@ env:
   CC_aarch64_unknown_linux_gnu: aarch64-linux-gnu-gcc
   CXX_aarch64_unknown_linux_gnu: aarch64-linux-gnu-g++
   RUSTFLAGS: -C target-feature=+crt-static
-  OPENSSL_NO_VENDOR: 1
+  # OPENSSL_NO_VENDOR: 1
 
 jobs:
   build:
@@ -112,12 +112,6 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
           key: ${{ runner.os }}-cargo
-      - name: Set up target cache
-        uses: actions/cache@v3
-        with:
-          path: ${{ matrix.dir }}/target/
-          key: ${{ runner.os }}-${{ matrix.bin }}-target-${{ hashFiles(format('{0}{1}', matrix.dir, '/Cargo.lock')) }}
-          restore-keys: ${{ runner.os }}-${{ matrix.bin }}-target-
 
       - uses: actions-rs/toolchain@v1
         with:
@@ -128,7 +122,6 @@ jobs:
 
       - name: Add cross compile Linux tools
         if: ${{ matrix.target == 'aarch64-unknown-linux-gnu' }}
-        shell: bash
         env:
           packages: >
             libssl-dev
