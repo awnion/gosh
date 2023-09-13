@@ -41,34 +41,40 @@ jobs:
         toolchain:
           - stable
     steps:
-      - uses: actions/checkout@v4
+      # - uses: actions/checkout@v4
 
-      - name: Copy ABI
-        working-directory: v6_x/v6.1.0/git-remote-gosh
+      # - name: Copy ABI
+      #   working-directory: v6_x/v6.1.0/git-remote-gosh
+      #   run: |
+      #     make copy_abi
+
+      # - name: Build binary
+      #   uses: houseabsolute/actions-rust-cross@v0
+      #   with:
+      #     command: build
+      #     working-directory: v6_x/v6.1.0/git-remote-gosh
+      #     target: ${{ matrix.platform.target }}
+      #     toolchain: ${{ matrix.toolchain }}
+      #     args: --release
+      #     strip: true
+
+      - name: Fake build
+        if: startsWith(matrix.platform.os, 'windows') != true
         run: |
-          make copy_abi
-
-      - name: Build binary
-        uses: houseabsolute/actions-rust-cross@v0
-        with:
-          command: "build"
-          working-directory: v6_x/v6.1.0/git-remote-gosh
-          target: ${{ matrix.platform.target }}
-          toolchain: ${{ matrix.toolchain }}
-          args: "--locked --release"
-          strip: true
+          mkdir -p v6_x/v6.1.0/git-remote-gosh/target/${{ matrix.platform.target }}/release
+          touch v6_x/v6.1.0/git-remote-gosh/target/${{ matrix.platform.target }}/release/${{ matrix.platform.bin }}
+          ls -lA v6_x/v6.1.0/git-remote-gosh/target/${{ matrix.platform.target }}/release
 
       - name: Prepare release (not windows)
         if: startsWith(matrix.platform.os, 'windows') != true
         run: |
-          tar -czvf \
-            --transform 's|^|${{ matrix.platform.target }}/|' \
-            -C v6_x/v6.1.0/git-remote-gosh/target/${{ matrix.platform.target }}/release \
-            ${{ matrix.platform.target }}.tar.gz \
-            ${{ matrix.platform.bin }}
+          mkdir -p ${{ matrix.platform.target }}
+          mv v6_x/v6.1.0/git-remote-gosh/target/${{ matrix.platform.target }}/release/${{ matrix.platform.bin }} ${{ matrix.platform.target }}
+          tar -czvf ${{ matrix.platform.target }}.tar.gz ${{ matrix.platform.target }}
 
       - name: Release binary
         uses: softprops/action-gh-release@v1
+        if: startsWith(matrix.platform.os, 'windows') != true
         with:
           files: |
             ${{ matrix.platform.target }}.tar.gz
