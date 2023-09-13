@@ -18,25 +18,25 @@ jobs:
       fail-fast: false
       matrix:
         platform:
-          - os_name: Linux-aarch64
+          - release_name: git-remote-gosh-linux-arm64
             os: ubuntu-20.04
             target: aarch64-unknown-linux-musl
             bin: git-remote-gosh_v6_1_0
-          - os_name: Linux-x86_64
+          - release_name: git-remote-gosh-linux-amd64
             os: ubuntu-20.04
             target: x86_64-unknown-linux-musl
             bin: git-remote-gosh_v6_1_0
-          - os_name: Windows-x86_64
+          - release_name: git-remote-gosh-windows-amd64
             os: windows-latest
             target: x86_64-pc-windows-msvc
             bin: git-remote-gosh_v6_1_0.exe
-          - os_name: macOS-x86_64
-            os: macos-latest
-            target: x86_64-apple-darwin
-            bin: git-remote-gosh_v6_1_0
-          - os_name: macOS-aarch64
+          - release_name: git-remote-gosh-darwin-arm64
             os: macos-latest
             target: aarch64-apple-darwin
+            bin: git-remote-gosh_v6_1_0
+          - release_name: git-remote-gosh-darwin-amd64
+            os: macos-latest
+            target: x86_64-apple-darwin
             bin: git-remote-gosh_v6_1_0
         toolchain:
           - stable
@@ -69,14 +69,14 @@ jobs:
         if: startsWith(matrix.platform.os, 'windows') != true
         run: |
           mkdir -p ${{ matrix.platform.target }}
-          mv v6_x/v6.1.0/git-remote-gosh/target/${{ matrix.platform.target }}/release/${{ matrix.platform.bin }} ${{ matrix.platform.target }}
-          tar -czvf ${{ matrix.platform.target }}.tar.gz ${{ matrix.platform.target }}
+          mv v6_x/v6.1.0/git-remote-gosh/target/${{ matrix.platform.target }}/release/${{ matrix.platform.bin }} ${{ matrix.platform.release_name }}
+          tar -czvf ${{ matrix.platform.release_name }}.tar.gz ${{ matrix.platform.release_name }}
 
       - name: Release binary
         uses: softprops/action-gh-release@v1
         if: startsWith(matrix.platform.os, 'windows') != true
         with:
           files: |
-            ${{ matrix.platform.target }}.tar.gz
+            ${{ matrix.platform.release_name }}.tar.gz
           prerelease: true
           tag_name: rc-${{ github.ref_name }}-${{ github.run_number }}
