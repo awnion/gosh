@@ -1,0 +1,76 @@
+name: build and release
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - dev
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: ${{ matrix.platform.os_name }} with rust ${{ matrix.toolchain }}
+    runs-on: ${{ matrix.platform.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - os_name: Linux-aarch64
+            os: ubuntu-20.04
+            target: aarch64-unknown-linux-musl
+            bin: git-remote-gosh_v6_1_0
+          - os_name: Linux-x86_64
+            os: ubuntu-20.04
+            target: x86_64-unknown-linux-musl
+            bin: git-remote-gosh_v6_1_0
+          - os_name: Windows-x86_64
+            os: windows-latest
+            target: x86_64-pc-windows-msvc
+            bin: git-remote-gosh_v6_1_0.exe
+          - os_name: macOS-x86_64
+            os: macos-latest
+            target: x86_64-apple-darwin
+            bin: git-remote-gosh_v6_1_0
+          - os_name: macOS-aarch64
+            os: macos-latest
+            target: aarch64-apple-darwin
+            bin: git-remote-gosh_v6_1_0
+        toolchain:
+          - stable
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Copy ABI
+        working-directory: v6_x/v6.1.0/git-remote-gosh
+        run: |
+          make copy_abi
+
+      - name: Build binary
+        uses: houseabsolute/actions-rust-cross@v0
+        with:
+          command: "build"
+          working-directory: v6_x/v6.1.0/git-remote-gosh
+          target: ${{ matrix.platform.target }}
+          toolchain: ${{ matrix.toolchain }}
+          args: "--locked --release"
+          strip: true
+
+      - name: Prepare release (not windows)
+        if: startsWith(matrix.platform.os, 'windows') != true
+        run: |
+          tar -czvf \
+            --transform 's|^|${{ matrix.platform.target }}/|' \
+            -C v6_x/v6.1.0/git-remote-gosh/target/${{ matrix.platform.target }}/release \
+            ${{ matrix.platform.target }}.tar.gz \
+            ${{ matrix.platform.bin }}
+
+      - name: Release binary
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            ${{ matrix.platform.target }}.tar.gz
+          prerelease: true
+          tag_name: rc-${{ github.ref_name }}-${{ github.run_number }}
