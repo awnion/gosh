@@ -32,8 +32,8 @@ jobs:
       fail-fast: false
       matrix:
         name:
-          - git-remote-gosh-darwin-arm64
-          - git-remote-gosh-darwin-amd64
+          # - git-remote-gosh-darwin-arm64
+          # - git-remote-gosh-darwin-amd64
           - git-remote-gosh-linux-arm64
           - git-remote-gosh-linux-amd64
         bin:
@@ -76,12 +76,12 @@ jobs:
             copy_abi: true
 
           ## name
-          - name: git-remote-gosh-darwin-arm64
-            os: macos-12
-            target: aarch64-apple-darwin
-          - name: git-remote-gosh-darwin-amd64
-            os: macos-12
-            target: x86_64-apple-darwin
+          # - name: git-remote-gosh-darwin-arm64
+          #   os: macos-12
+          #   target: aarch64-apple-darwin
+          # - name: git-remote-gosh-darwin-amd64
+          #   os: macos-12
+          #   target: x86_64-apple-darwin
           - name: git-remote-gosh-linux-arm64
             os: ubuntu-20.04  # important due to potential glibc conflicts
             target: aarch64-unknown-linux-gnu
@@ -112,13 +112,6 @@ jobs:
             ~/.cargo/git/db/
           key: ${{ runner.os }}-cargo
 
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          target: ${{ matrix.target }}
-          override: true
-
       - name: Install Linux packages
         if: startsWith(matrix.os, 'ubuntu-')
         env:
@@ -148,6 +141,11 @@ jobs:
         ## NOTE: workaround rate-limit
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install Rust
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+          rustup target add ${{ matrix.target }}
 
       - name: Copy ABI
         if: ${{ matrix.copy_abi }}
@@ -182,8 +180,8 @@ jobs:
     strategy:
       matrix:
         name:
-          - git-remote-gosh-darwin-arm64
-          - git-remote-gosh-darwin-amd64
+          # - git-remote-gosh-darwin-arm64
+          # - git-remote-gosh-darwin-amd64
           - git-remote-gosh-linux-arm64
           - git-remote-gosh-linux-amd64
 
