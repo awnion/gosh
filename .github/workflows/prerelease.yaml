@@ -32,8 +32,8 @@ jobs:
       fail-fast: false
       matrix:
         name:
-          - git-remote-gosh-darwin-arm64
-          - git-remote-gosh-darwin-amd64
+          # - git-remote-gosh-darwin-arm64
+          # - git-remote-gosh-darwin-amd64
           - git-remote-gosh-linux-arm64
           - git-remote-gosh-linux-amd64
         bin:
@@ -76,12 +76,12 @@ jobs:
             copy_abi: true
 
           ## name
-          - name: git-remote-gosh-darwin-arm64
-            os: macos-12
-            target: aarch64-apple-darwin
-          - name: git-remote-gosh-darwin-amd64
-            os: macos-12
-            target: x86_64-apple-darwin
+          # - name: git-remote-gosh-darwin-arm64
+          #   os: macos-12
+          #   target: aarch64-apple-darwin
+          # - name: git-remote-gosh-darwin-amd64
+          #   os: macos-12
+          #   target: x86_64-apple-darwin
           - name: git-remote-gosh-linux-arm64
             os: ubuntu-20.04  # important due to potential glibc conflicts
             target: aarch64-unknown-linux-gnu
@@ -122,17 +122,26 @@ jobs:
       - name: Install Linux packages
         if: startsWith('ubuntu-', matrix.os)
         env:
-          packages: >
+          APT: >
+            clang
+            libc6-dev
             librocksdb-dev
             libssl-dev
+          APT_ARM64: >
+            g++-aarch64-linux-gnu
+            libc6-dev-arm64-cross
+            gcc-aarch64-linux-gnu
+          APT_AMD64: >
+            g++-x86-64-linux-gnu
+            libc6-dev-amd64-cross
+            gcc-x86_64-linux-gnu
         run: |
-          sudo apt-get update -y && sudo apt-get install -y $packages
+          sudo apt-get update -y && sudo apt-get install -y \
+            $APT \
+            $APT_${{ startsWith(matrix.target, 'aarch64') && 'ARM64' || 'AMD64' }}
 
-      - name: Add cross compile Linux tools
-        if: ${{ matrix.target == 'aarch64-unknown-linux-gnu' }}
-        run: |
-          sudo apt-get update -y && sudo apt-get install -y g++-aarch64-linux-gnu libc6-dev-arm64-cross gcc-aarch64-linux-gnu
-          rustup target add aarch64-unknown-linux-gnu
+          # Install fresh LLVM
+          sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)"
 
       - name: Install Protoc
         uses: arduino/setup-protoc@v2
@@ -173,8 +182,8 @@ jobs:
     strategy:
       matrix:
         name:
-          - git-remote-gosh-darwin-arm64
-          - git-remote-gosh-darwin-amd64
+          # - git-remote-gosh-darwin-arm64
+          # - git-remote-gosh-darwin-amd64
           - git-remote-gosh-linux-arm64
           - git-remote-gosh-linux-amd64
 
