@@ -37,40 +37,40 @@ jobs:
           - git-remote-gosh-linux-arm64
           - git-remote-gosh-linux-amd64
         bin:
-          - git-remote-gosh
-          - git-remote-gosh_v1_0_0
-          - git-remote-gosh_v2_0_0
-          - git-remote-gosh_v3_0_0
-          - git-remote-gosh_v4_0_0
-          - git-remote-gosh_v5_0_0
-          - git-remote-gosh_v5_1_0
-          - git-remote-gosh_v6_0_0
+          # - git-remote-gosh
+          # - git-remote-gosh_v1_0_0
+          # - git-remote-gosh_v2_0_0
+          # - git-remote-gosh_v3_0_0
+          # - git-remote-gosh_v4_0_0
+          # - git-remote-gosh_v5_0_0
+          # - git-remote-gosh_v5_1_0
+          # - git-remote-gosh_v6_0_0
           - git-remote-gosh_v6_1_0
         include:
           ## bin
-          - bin: git-remote-gosh
-            dir: gosh-dispatcher
-          - bin: git-remote-gosh_v1_0_0
-            dir: v1_x/git-remote-gosh
-            copy_abi: true
-          - bin: git-remote-gosh_v2_0_0
-            dir: v2_x/git-remote-gosh
-            copy_abi: true
-          - bin: git-remote-gosh_v3_0_0
-            dir: v3_x/git-remote-gosh
-            copy_abi: true
-          - bin: git-remote-gosh_v4_0_0
-            dir: v4_x/git-remote-gosh
-            copy_abi: true
-          - bin: git-remote-gosh_v5_0_0
-            dir: v5_x/v5.0.0/git-remote-gosh
-            copy_abi: true
-          - bin: git-remote-gosh_v5_1_0
-            dir: v5_x/v5.1.0/git-remote-gosh
-            copy_abi: true
-          - bin: git-remote-gosh_v6_0_0
-            dir: v6_x/v6.0.0/git-remote-gosh
-            copy_abi: true
+          # - bin: git-remote-gosh
+          #   dir: gosh-dispatcher
+          # - bin: git-remote-gosh_v1_0_0
+          #   dir: v1_x/git-remote-gosh
+          #   copy_abi: true
+          # - bin: git-remote-gosh_v2_0_0
+          #   dir: v2_x/git-remote-gosh
+          #   copy_abi: true
+          # - bin: git-remote-gosh_v3_0_0
+          #   dir: v3_x/git-remote-gosh
+          #   copy_abi: true
+          # - bin: git-remote-gosh_v4_0_0
+          #   dir: v4_x/git-remote-gosh
+          #   copy_abi: true
+          # - bin: git-remote-gosh_v5_0_0
+          #   dir: v5_x/v5.0.0/git-remote-gosh
+          #   copy_abi: true
+          # - bin: git-remote-gosh_v5_1_0
+          #   dir: v5_x/v5.1.0/git-remote-gosh
+          #   copy_abi: true
+          # - bin: git-remote-gosh_v6_0_0
+          #   dir: v6_x/v6.0.0/git-remote-gosh
+          #   copy_abi: true
           - bin: git-remote-gosh_v6_1_0
             dir: v6_x/v6.1.0/git-remote-gosh
             copy_abi: true
@@ -83,10 +83,10 @@ jobs:
             os: macos-12
             target: x86_64-apple-darwin
           - name: git-remote-gosh-linux-arm64
-            os: ubuntu-22.04
+            os: ubuntu-20.04  # important due to potential glibc conflicts
             target: aarch64-unknown-linux-gnu
           - name: git-remote-gosh-linux-amd64
-            os: ubuntu-22.04
+            os: ubuntu-20.04  # important due to potential glibc conflicts
             target: x86_64-unknown-linux-gnu
           # - name: git-remote-gosh-windows-amd64
           #   os: windows-2019
