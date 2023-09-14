@@ -120,11 +120,11 @@ jobs:
           override: true
 
       - name: Install Linux packages
-        if: startsWith('ubuntu-', matrix.os)
+        if: startsWith(matrix.os, 'ubuntu-')
         env:
           APT: >
             clang
-            libc6-dev
+            build-essential
             librocksdb-dev
             libssl-dev
           APT_ARM64: >
@@ -134,7 +134,7 @@ jobs:
           APT_AMD64: >
             g++-x86-64-linux-gnu
             libc6-dev-amd64-cross
-            gcc-x86_64-linux-gnu
+            gcc-x86-64-linux-gnu
         run: |
           sudo apt-get update -y && sudo apt-get install -y \
             $APT \
