@@ -24,6 +24,7 @@ env:
   CC_aarch64_unknown_linux_gnu: aarch64-linux-gnu-gcc
   CXX_aarch64_unknown_linux_gnu: aarch64-linux-gnu-g++
   RUSTFLAGS: -C target-feature=+crt-static
+  BINDGEN_EXTRA_CLANG_ARGS": '--sysroot /usr/arm-linux-gnueabi'
 
 jobs:
   build:
@@ -144,7 +145,7 @@ jobs:
 
       - name: Install Rust
         run: |
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
           rustup target add ${{ matrix.target }}
 
       - name: Copy ABI
