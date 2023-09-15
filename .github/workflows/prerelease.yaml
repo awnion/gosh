@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - dev
+      - main
 
 permissions:
   contents: write
@@ -23,7 +23,7 @@ env:
   CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
   CC_aarch64_unknown_linux_gnu: aarch64-linux-gnu-gcc
   CXX_aarch64_unknown_linux_gnu: aarch64-linux-gnu-g++
-  RUSTFLAGS: -C target-feature=+crt-static
+  RUSTFLAGS: -C target-feature=+crt-static -C link-self-contained=yes
 
 jobs:
   build:
@@ -37,43 +37,35 @@ jobs:
           - git-remote-gosh-linux-arm64
           - git-remote-gosh-linux-amd64
         bin:
-          - git-remote-gosh
-          - git-remote-gosh_v1_0_0
-          - git-remote-gosh_v2_0_0
-          - git-remote-gosh_v3_0_0
-          - git-remote-gosh_v4_0_0
-          - git-remote-gosh_v5_0_0
-          - git-remote-gosh_v5_1_0
-          - git-remote-gosh_v6_0_0
+          # - git-remote-gosh
+          # - git-remote-gosh_v1_0_0
+          # - git-remote-gosh_v2_0_0
+          # - git-remote-gosh_v3_0_0
+          # - git-remote-gosh_v4_0_0
+          # - git-remote-gosh_v5_0_0
+          # - git-remote-gosh_v5_1_0
+          # - git-remote-gosh_v6_0_0
           - git-remote-gosh_v6_1_0
         include:
           ## bin
-          - bin: git-remote-gosh
-            dir: gosh-dispatcher
-          - bin: git-remote-gosh_v1_0_0
-            dir: v1_x/git-remote-gosh
-            copy_abi: true
-          - bin: git-remote-gosh_v2_0_0
-            dir: v2_x/git-remote-gosh
-            copy_abi: true
-          - bin: git-remote-gosh_v3_0_0
-            dir: v3_x/git-remote-gosh
-            copy_abi: true
-          - bin: git-remote-gosh_v4_0_0
-            dir: v4_x/git-remote-gosh
-            copy_abi: true
-          - bin: git-remote-gosh_v5_0_0
-            dir: v5_x/v5.0.0/git-remote-gosh
-            copy_abi: true
-          - bin: git-remote-gosh_v5_1_0
-            dir: v5_x/v5.1.0/git-remote-gosh
-            copy_abi: true
-          - bin: git-remote-gosh_v6_0_0
-            dir: v6_x/v6.0.0/git-remote-gosh
-            copy_abi: true
+          # - bin: git-remote-gosh
+          #   dir: gosh-dispatcher
+          # - bin: git-remote-gosh_v1_0_0
+          #   dir: v1_x/git-remote-gosh
+          # - bin: git-remote-gosh_v2_0_0
+          #   dir: v2_x/git-remote-gosh
+          # - bin: git-remote-gosh_v3_0_0
+          #   dir: v3_x/git-remote-gosh
+          # - bin: git-remote-gosh_v4_0_0
+          #   dir: v4_x/git-remote-gosh
+          # - bin: git-remote-gosh_v5_0_0
+          #   dir: v5_x/v5.0.0/git-remote-gosh
+          # - bin: git-remote-gosh_v5_1_0
+          #   dir: v5_x/v5.1.0/git-remote-gosh
+          # - bin: git-remote-gosh_v6_0_0
+          #   dir: v6_x/v6.0.0/git-remote-gosh
           - bin: git-remote-gosh_v6_1_0
             dir: v6_x/v6.1.0/git-remote-gosh
-            copy_abi: true
 
           ## name
           - name: git-remote-gosh-darwin-arm64
@@ -83,10 +75,10 @@ jobs:
             os: macos-12
             target: x86_64-apple-darwin
           - name: git-remote-gosh-linux-arm64
-            os: ubuntu-22.04
+            os: ubuntu-20.04
             target: aarch64-unknown-linux-gnu
           - name: git-remote-gosh-linux-amd64
-            os: ubuntu-22.04
+            os: ubuntu-20.04
             target: x86_64-unknown-linux-gnu
           # - name: git-remote-gosh-windows-amd64
           #   os: windows-2019
@@ -120,30 +112,35 @@ jobs:
           override: true
 
       - name: Install Linux packages
-        if: startsWith('ubuntu-', matrix.os)
+        if: startsWith(matrix.os, 'ubuntu-')
         env:
-          packages: >
+          APT: >-
+            clang
+            build-essential
             librocksdb-dev
             libssl-dev
+          APT_ARM64: >-
+            g++-aarch64-linux-gnu
+            libc6-dev-arm64-cross
+            gcc-aarch64-linux-gnu
+          APT_AMD64: >-
+            g++-x86-64-linux-gnu
+            libc6-dev-amd64-cross
+            gcc-x86-64-linux-gnu
         run: |
-          sudo apt-get update -y && sudo apt-get install -y $packages
+          echo "RUSTFLAGS=-C target-feature=+crt-static -C link-self-contained=yes" >> $GITHUB_ENV
+          sudo apt-get update -y && sudo apt-get install -y \
+            $APT \
+            $APT_${{ startsWith(matrix.target, 'aarch64') && 'ARM64' || 'AMD64' }}
 
-      - name: Add cross compile Linux tools
-        if: ${{ matrix.target == 'aarch64-unknown-linux-gnu' }}
-        run: |
-          sudo apt-get update -y && sudo apt-get install -y g++-aarch64-linux-gnu libc6-dev-arm64-cross gcc-aarch64-linux-gnu
-          rustup target add aarch64-unknown-linux-gnu
+          # Install fresh LLVM
+          sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)"
 
       - name: Install Protoc
         uses: arduino/setup-protoc@v2
         ## NOTE: workaround rate-limit
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Copy ABI
-        if: ${{ matrix.copy_abi }}
-        working-directory: ${{ matrix.dir }}
-        run: make copy_abi
 
       - name: Build Binary ${{ matrix.dir }}/target/${{ matrix.target }}/release/${{ matrix.bin }}
         working-directory: ${{ matrix.dir }}
