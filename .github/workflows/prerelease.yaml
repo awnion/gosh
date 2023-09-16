@@ -127,9 +127,6 @@ jobs:
             libc6-dev-amd64-cross
             gcc-x86-64-linux-gnu
         run: |
-          # Setup linux rustc flags
-          echo "RUSTFLAGS=-C target-feature=+crt-static -C link-self-contained=yes" >> $GITHUB_ENV
-
           sudo apt-get update -y && sudo apt-get install -y \
             $APT \
             $APT_${{ startsWith(matrix.target, 'aarch64') && 'ARM64' || 'AMD64' }}
