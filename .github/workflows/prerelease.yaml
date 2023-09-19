@@ -85,9 +85,9 @@ jobs:
             dir: v6_x/v6.1.0/git-remote-gosh
 
     env:
-      RESULT_DIR: ~/.result/${{ matrix.result }}
-      RESULT_BIN: ~/.result/${{ matrix.result }}/${{ matrix.bin }}
       CACHE: false  # default env value
+      CACHE_RESULT_DIR: .result/${{ matrix.result }}
+      CACHE_RESULT_BIN: .result/${{ matrix.result }}/${{ matrix.bin }}
 
     steps:
       - name: Checkout repo
@@ -101,13 +101,13 @@ jobs:
       - name: Setup result cache
         uses: actions/cache@v3
         with:
-          path: ${{ env.RESULT_DIR }}
+          path: ${{ env.CACHE_RESULT_DIR }}
           key: result-${{ matrix.target }}-${{ matrix.bin }}
 
       - name: Check if can use cache
         if: matrix.cache
         run: |
-          if [[ -f $RESULT_BIN ]] ; then
+          if [[ -f $CACHE_RESULT_BIN ]] ; then
             echo "CACHE=true" >> $GITHUB_ENV
           fi
 
@@ -171,15 +171,15 @@ jobs:
 
           ls -lA target/${{ matrix.target }}/release
 
-          mkdir -p $RESULT_DIR
-          cp target/${{ matrix.target }}/release/${{ matrix.bin }} $RESULT_BIN
-          ls -lA $RESULT_DIR
+          mkdir -p $CACHE_RESULT_DIR
+          cp target/${{ matrix.target }}/release/${{ matrix.bin }} $CACHE_RESULT_BIN
+          ls -lA $CACHE_RESULT_DIR
 
       - name: Artifact ${{ matrix.result }}
         uses: actions/upload-artifact@v3
         with:
           path: |
-            ${{ env.RESULT_BIN }}
+            ${{ env.CACHE_RESULT_BIN }}
           name: ${{ matrix.result }}--${{ matrix.bin }}
           retention-days: 3
 
