@@ -148,7 +148,7 @@ jobs:
       - name: Install MacOS tools
         if: env.CACHE != 'true' && startsWith(matrix.os, 'macos-')
         run: |
-          brew install zig
+          brew install zig protobuf
 
       - name: Install common tools
         if: env.CACHE != 'true'
