@@ -86,18 +86,10 @@ jobs:
 
     env:
       CACHE: false  # default env value
-      CACHE_RESULT_DIR: .result/${{ matrix.result }}
-      CACHE_RESULT_BIN: .result/${{ matrix.result }}/${{ matrix.bin }}
+      CACHE_RESULT_DIR: ${{ github.workspace }}/.result/${{ matrix.result }}
+      CACHE_RESULT_BIN: ${{ github.workspace }}/.result/${{ matrix.result }}/${{ matrix.bin }}
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-
-      - name: Set VERSION
-        id: version
-        run: |
-          echo "VERSION=$(cat version.json | jq -r .version)" >> "$GITHUB_OUTPUT"
-
       - name: Setup result cache
         uses: actions/cache@v3
         with:
@@ -110,6 +102,15 @@ jobs:
           if [[ -f $CACHE_RESULT_BIN ]] ; then
             echo "CACHE=true" >> $GITHUB_ENV
           fi
+
+      - name: Checkout repo
+        if: env.CACHE != 'true'
+        uses: actions/checkout@v4
+
+      - name: Set VERSION
+        id: version
+        run: |
+          echo "VERSION=$(cat version.json | jq -r .version)" >> "$GITHUB_OUTPUT"
 
       - name: Setup cargo cache
         uses: actions/cache@v3
@@ -171,16 +172,15 @@ jobs:
 
           ls -lA target/${{ matrix.target }}/release
 
-          mkdir -p $CACHE_RESULT_DIR
           cp target/${{ matrix.target }}/release/${{ matrix.bin }} $CACHE_RESULT_BIN
           ls -lA $CACHE_RESULT_DIR
 
       - name: Artifact ${{ matrix.result }}
         uses: actions/upload-artifact@v3
         with:
-          path: |
-            ${{ env.CACHE_RESULT_BIN }}
+          path: ${{ env.CACHE_RESULT_BIN }}
           name: ${{ matrix.result }}--${{ matrix.bin }}
+          if-no-files-found: error
           retention-days: 3
 
     outputs:
