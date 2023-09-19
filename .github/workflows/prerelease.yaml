@@ -164,16 +164,13 @@ jobs:
           RUST_BACKTRACE: full
           RUSTUP_MAX_RETRIES: 10
         run: |
-          ## TODO: dryrun
-          mkdir -p target/${{ matrix.target }}/release
-          cargo zigbuild --help > target/${{ matrix.target }}/release/${{ matrix.bin }}
-
-          # cargo zigbuild -r --target ${{ matrix.target }}
+          cargo zigbuild -r --target ${{ matrix.target }}
 
           ls -lA target/${{ matrix.target }}/release
 
           mkdir -p ${{ env.CACHE_RESULT_DIR }}
           cp target/${{ matrix.target }}/release/${{ matrix.bin }} ${{ env.CACHE_RESULT_BIN }}
+
           ls -lA ${{ env.CACHE_RESULT_DIR }}
 
       - name: Artifact ${{ matrix.result }}
