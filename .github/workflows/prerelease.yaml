@@ -99,7 +99,7 @@ jobs:
       - name: Check if can use cache
         if: matrix.cache
         run: |
-          if [[ -f $CACHE_RESULT_BIN ]] ; then
+          if [[ -f ${{ env.CACHE_RESULT_BIN }} ]] ; then
             echo "CACHE=true" >> $GITHUB_ENV
           fi
 
@@ -172,8 +172,9 @@ jobs:
 
           ls -lA target/${{ matrix.target }}/release
 
-          cp target/${{ matrix.target }}/release/${{ matrix.bin }} $CACHE_RESULT_BIN
-          ls -lA $CACHE_RESULT_DIR
+          mkdir -p ${{ env.CACHE_RESULT_DIR }}
+          cp target/${{ matrix.target }}/release/${{ matrix.bin }} ${{ env.CACHE_RESULT_BIN }}
+          ls -lA ${{ env.CACHE_RESULT_DIR }}
 
       - name: Artifact ${{ matrix.result }}
         uses: actions/upload-artifact@v3
