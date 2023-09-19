@@ -173,11 +173,13 @@ jobs:
 
           mkdir -p $RESULT_DIR
           cp target/${{ matrix.target }}/release/${{ matrix.bin }} $RESULT_BIN
+          ls -lA $RESULT_DIR
 
       - name: Artifact ${{ matrix.result }}
         uses: actions/upload-artifact@v3
         with:
-          path: ${{ env.RESULT_BIN }}
+          path: |
+            ${{ env.RESULT_BIN }}
           name: ${{ matrix.result }}--${{ matrix.bin }}
           retention-days: 3
 
