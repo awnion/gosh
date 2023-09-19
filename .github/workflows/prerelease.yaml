@@ -21,6 +21,7 @@ jobs:
   build:
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         bin:
           - git-remote-gosh
@@ -104,8 +105,9 @@ jobs:
           key: result-${{ matrix.target }}-${{ matrix.bin }}
 
       - name: Check if can use cache
+        if: matrix.cache
         run: |
-          if [[ ${{ matrix.cache }} == "true" && -f $RESULT_BIN ]] ; then
+          if [[ -f $RESULT_BIN ]] ; then
             echo "CACHE=true" >> $GITHUB_ENV
           fi
 
