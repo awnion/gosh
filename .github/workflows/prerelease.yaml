@@ -90,6 +90,14 @@ jobs:
       CACHE_RESULT_BIN: ${{ github.workspace }}/.result/${{ matrix.result }}/${{ matrix.bin }}
 
     steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set VERSION
+        id: version
+        run: |
+          echo "VERSION=$(cat version.json | jq -r .version)" >> "$GITHUB_OUTPUT"
+
       - name: Setup result cache
         uses: actions/cache@v3
         with:
@@ -103,16 +111,8 @@ jobs:
             echo "CACHE=true" >> $GITHUB_ENV
           fi
 
-      - name: Checkout repo
-        if: env.CACHE != 'true'
-        uses: actions/checkout@v4
-
-      - name: Set VERSION
-        id: version
-        run: |
-          echo "VERSION=$(cat version.json | jq -r .version)" >> "$GITHUB_OUTPUT"
-
       - name: Setup cargo cache
+        if: env.CACHE != 'true'
         uses: actions/cache@v3
         with:
           path: |
