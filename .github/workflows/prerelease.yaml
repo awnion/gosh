@@ -14,20 +14,7 @@ permissions:
 
 env:
   release: ${{ startsWith(github.ref, 'refs/tags/') || github.repository == 'gosh-sh/gosh' }}
-  DISPATCHER_CONTENT: |
-    git-remote-gosh_v6_1_0
-    git-remote-gosh_v6_0_0
-    git-remote-gosh_v5_1_0
-    git-remote-gosh_v5_0_0
-    git-remote-gosh_v4_0_0
-    git-remote-gosh_v3_0_0
-    git-remote-gosh_v2_0_0
-    git-remote-gosh_v1_0_0
   CARGO_TERM_COLOR: always
-  CARGO_INCREMENTAL: 0  # important for cache size too
-  CARGO_NET_RETRY: 10
-  RUST_BACKTRACE: full
-  RUSTUP_MAX_RETRIES: 10
 
 jobs:
   unix-build:
@@ -44,11 +31,11 @@ jobs:
           - git-remote-gosh_v5_1_0
           - git-remote-gosh_v6_0_0
           - git-remote-gosh_v6_1_0
-        target:
-          - aarch64-apple-darwin
-          - x86_64-apple-darwin
-          - aarch64-unknown-linux-musl
-          - x86_64-unknown-linux-musl
+        result:
+          - git-remote-gosh-darwin-arm64
+          - git-remote-gosh-darwin-amd64
+          - git-remote-gosh-linux-arm64
+          - git-remote-gosh-linux-amd64
 
         include:
           # targets
@@ -73,20 +60,31 @@ jobs:
             dir: gosh-dispatcher
           - bin: git-remote-gosh_v1_0_0
             dir: v1_x/git-remote-gosh
+            cache: true
           - bin: git-remote-gosh_v2_0_0
             dir: v2_x/git-remote-gosh
+            cache: true
           - bin: git-remote-gosh_v3_0_0
             dir: v3_x/git-remote-gosh
+            cache: true
           - bin: git-remote-gosh_v4_0_0
             dir: v4_x/git-remote-gosh
+            cache: true
           - bin: git-remote-gosh_v5_0_0
             dir: v5_x/v5.0.0/git-remote-gosh
+            cache: true
           - bin: git-remote-gosh_v5_1_0
             dir: v5_x/v5.1.0/git-remote-gosh
+            cache: true
           - bin: git-remote-gosh_v6_0_0
             dir: v6_x/v6.0.0/git-remote-gosh
+            cache: true
           - bin: git-remote-gosh_v6_1_0
             dir: v6_x/v6.1.0/git-remote-gosh
+
+    env:
+      RESULT_DIR: ~/.result/${{ matrix.result }}
+      RESULT_BIN: ~/.result/${{ matrix.result }}/${{ matrix.bin }}
 
     steps:
       - name: Checkout repo
@@ -96,6 +94,13 @@ jobs:
         id: version
         run: |
           echo "VERSION=$(cat version.json | jq -r .version)" >> "$GITHUB_OUTPUT"
+
+      - name: Setup result cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ${{ env.RESULT_DIR }}
+          key: result-${{ matrix.target }}-${{ matrix.bin }}
 
       - name: Setup cargo cache
         uses: actions/cache@v3
@@ -107,12 +112,10 @@ jobs:
             ~/.cargo/git/db/
           key: builder-${{ runner.os }}-cargo
 
-      - uses: actions-rs/toolchain@v1
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
         with:
-          profile: minimal
-          toolchain: stable
-          target: ${{ matrix.target }}
-          override: true
+          targets: ${{ matrix.target }}
 
       - name: Install Linux tools
         if: startsWith(matrix.os, 'ubuntu-')
@@ -136,26 +139,37 @@ jobs:
         run: |
           brew install zig
 
-      - name: Install cargo-zigbuild
+      - name: Install common tools
         run: |
           test -f ~/.cargo/bin/cargo-zigbuild || cargo install cargo-zigbuild
 
       - name: Build Binary ${{ matrix.dir }}/target/${{ matrix.target }}/release/${{ matrix.bin }}
         working-directory: ${{ matrix.dir }}
+        env:
+          CARGO_INCREMENTAL: 0  # important for cache size too
+          CARGO_NET_RETRY: 10
+          RUST_BACKTRACE: full
+          RUSTUP_MAX_RETRIES: 10
         run: |
-          mkdir -p target/${{ matrix.target }}/release
-          cargo zigbuild --help > target/${{ matrix.target }}/release/${{ matrix.bin }}
+          if [[ "${{ matrix.cache }}" == "true" && -f "$RESULT_BIN" ]] ; then
+            echo "Use cached binary $RESULT_BIN"
+          else
+            ## TODO: dryrun
+            mkdir -p target/${{ matrix.target }}/release
+            cargo zigbuild --help > target/${{ matrix.target }}/release/${{ matrix.bin }}
 
-          ## TODO: dryrun
-          # cargo zigbuild -r --target ${{ matrix.target }}
+            # cargo zigbuild -r --target ${{ matrix.target }}
 
-          ls -lA target/${{ matrix.target }}/release
+            ls -lA target/${{ matrix.target }}/release
+            cp target/${{ matrix.target }}/release/${{ matrix.bin }} $RESULT_BIN
+          fi
 
       - name: Artifact ${{ matrix.result }}
         uses: actions/upload-artifact@v3
         with:
-          path: ${{ matrix.dir }}/target/${{ matrix.target }}/release/${{ matrix.bin }}
+          path: ${{ env.RESULT_BIN }}
           name: ${{ matrix.result }}--${{ matrix.bin }}
+          retention-days: 3
 
     outputs:
       version: ${{ steps.version.outputs.VERSION }}
@@ -189,25 +203,27 @@ jobs:
       - name: Make archive
         run: |
           chmod +x ${{ matrix.result }}/*
-          echo "$DISPATCHER_CONTENT" | tee '${{ matrix.result }}/dispatcher.ini'
+          printf "%s\n" ${{ matrix.result }}/git-remote-gosh_* | sort -rV | tee '${{ matrix.result }}/dispatcher.ini'
 
           tar -czvf ${{ matrix.result }}.tar.gz -C ${{ matrix.result }} .
 
-      - name: Publish Preview
+      - name: Upload Draft
         uses: softprops/action-gh-release@v1
         if: env.release != 'true'
         with:
           draft: true
+          tag_name: rc-${{ needs.unix-build.outputs.version || 'no-version' }}-${{ github.ref_name }}-${{ github.run_number }}
           files: |
             ${{ matrix.result }}.tar.gz
-          tag_name: rc-${{ needs.unix-build.outputs.version || 'no-version' }}-${{ github.ref_name }}-${{ github.run_number }}
+          body: ""
 
-      - name: Publish Preview
+      - name: Upload Prerelease
         uses: softprops/action-gh-release@v1
-        if: env.release != 'true'
+        if: env.release == 'true'
         with:
           prerelease: true
+          tag_name: rc-${{ github.ref_name }}-build-${{ github.run_number }}
           files: |
             ${{ matrix.result }}.tar.gz
-          name: Version: ${{ needs.unix-build.outputs.version || 'no-version' }}
-          tag_name: rc-${{ needs.unix-build.outputs.version || 'no-version' }}-${{ github.run_number }}
+          name: "Version: ${{ github.ref_name }}"
+          body: ""
