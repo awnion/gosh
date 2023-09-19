@@ -8,7 +8,7 @@ on:
       - '[0-9]+.[0-9]+.[0-9]+'
     branches:
       - main
-      - ci/*
+      - 'ci/**'
 
 permissions:
   contents: write
@@ -18,7 +18,7 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  unix-build:
+  build:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -86,6 +86,7 @@ jobs:
     env:
       RESULT_DIR: ~/.result/${{ matrix.result }}
       RESULT_BIN: ~/.result/${{ matrix.result }}/${{ matrix.bin }}
+      CACHE: false  # default env value
 
     steps:
       - name: Checkout repo
@@ -103,6 +104,12 @@ jobs:
             ${{ env.RESULT_DIR }}
           key: result-${{ matrix.target }}-${{ matrix.bin }}
 
+      - name: Check if can use cache
+        run:
+          if [[ "${{ matrix.cache }}" == "true" && -f "$RESULT_BIN" ]] ; then
+            echo "CACHE=true" >> $GITHUB_ENV
+          fi
+
       - name: Setup cargo cache
         uses: actions/cache@v3
         with:
@@ -114,12 +121,13 @@ jobs:
           key: builder-${{ runner.os }}-cargo
 
       - name: Install Rust
+        if: env.CACHE != 'true'
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
 
       - name: Install Linux tools
-        if: startsWith(matrix.os, 'ubuntu-')
+        if: env.CACHE != 'true' && startsWith(matrix.os, 'ubuntu-')
         env:
           packages: >-
             build-essential
@@ -136,34 +144,34 @@ jobs:
           pip3 install ziglang
 
       - name: Install MacOS tools
-        if: startsWith(matrix.os, 'macos-')
+        if: env.CACHE != 'true' && startsWith(matrix.os, 'macos-')
         run: |
           brew install zig
 
       - name: Install common tools
+        if: env.CACHE != 'true'
         run: |
           test -f ~/.cargo/bin/cargo-zigbuild || cargo install cargo-zigbuild
 
       - name: Build Binary ${{ matrix.dir }}/target/${{ matrix.target }}/release/${{ matrix.bin }}
         working-directory: ${{ matrix.dir }}
+        if: env.CACHE != 'true'
         env:
           CARGO_INCREMENTAL: 0  # important for cache size too
           CARGO_NET_RETRY: 10
           RUST_BACKTRACE: full
           RUSTUP_MAX_RETRIES: 10
         run: |
-          if [[ "${{ matrix.cache }}" == "true" && -f "$RESULT_BIN" ]] ; then
-            echo "Use cached binary $RESULT_BIN"
-          else
-            ## TODO: dryrun
-            mkdir -p target/${{ matrix.target }}/release
-            cargo zigbuild --help > target/${{ matrix.target }}/release/${{ matrix.bin }}
+          ## TODO: dryrun
+          mkdir -p target/${{ matrix.target }}/release
+          cargo zigbuild --help > target/${{ matrix.target }}/release/${{ matrix.bin }}
 
-            # cargo zigbuild -r --target ${{ matrix.target }}
+          # cargo zigbuild -r --target ${{ matrix.target }}
 
-            ls -lA target/${{ matrix.target }}/release
-            cp target/${{ matrix.target }}/release/${{ matrix.bin }} $RESULT_BIN
-          fi
+          ls -lA target/${{ matrix.target }}/release
+
+          mkdir -p $RESULT_DIR
+          cp target/${{ matrix.target }}/release/${{ matrix.bin }} $RESULT_BIN
 
       - name: Artifact ${{ matrix.result }}
         uses: actions/upload-artifact@v3
@@ -177,7 +185,7 @@ jobs:
 
   release:
     needs:
-      - unix-build
+      - build
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -213,7 +221,7 @@ jobs:
         if: env.release != 'true'
         with:
           draft: true
-          tag_name: rc-${{ needs.unix-build.outputs.version || 'no-version' }}-${{ github.ref_name }}-${{ github.run_number }}
+          tag_name: rc-${{ needs.build.outputs.version || 'no-version' }}-${{ github.ref_name }}-${{ github.run_number }}
           files: |
             ${{ matrix.result }}.tar.gz
           body: ""
