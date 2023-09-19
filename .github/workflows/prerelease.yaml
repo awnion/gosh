@@ -104,9 +104,10 @@ jobs:
           key: result-${{ matrix.target }}-${{ matrix.bin }}
 
       - name: Check if can use cache
-        if: matrix.cache
         run: |
-          [[ -f $RESULT_BIN ]] && echo "CACHE=true" >> $GITHUB_ENV
+          if [[ ${{ matrix.cache }} == "true" && -f $RESULT_BIN ]] ; then
+            echo "CACHE=true" >> $GITHUB_ENV
+          fi
 
       - name: Setup cargo cache
         uses: actions/cache@v3
