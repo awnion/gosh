@@ -100,15 +100,13 @@ jobs:
       - name: Setup result cache
         uses: actions/cache@v3
         with:
-          path: |
-            ${{ env.RESULT_DIR }}
+          path: ${{ env.RESULT_DIR }}
           key: result-${{ matrix.target }}-${{ matrix.bin }}
 
       - name: Check if can use cache
-        run:
-          if [[ "${{ matrix.cache }}" == "true" && -f "$RESULT_BIN" ]] ; then
-            echo "CACHE=true" >> $GITHUB_ENV
-          fi
+        if: matrix.cache
+        run: |
+          [[ -f $RESULT_BIN ]] && echo "CACHE=true" >> $GITHUB_ENV
 
       - name: Setup cargo cache
         uses: actions/cache@v3
@@ -151,7 +149,7 @@ jobs:
       - name: Install common tools
         if: env.CACHE != 'true'
         run: |
-          test -f ~/.cargo/bin/cargo-zigbuild || cargo install cargo-zigbuild
+          [[ -f ~/.cargo/bin/cargo-zigbuild ]] || cargo install cargo-zigbuild
 
       - name: Build Binary ${{ matrix.dir }}/target/${{ matrix.target }}/release/${{ matrix.bin }}
         working-directory: ${{ matrix.dir }}
