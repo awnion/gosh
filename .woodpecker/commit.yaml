@@ -19,5 +19,7 @@ steps:
     image: rust:latest
     directory: ${dir}
     commands:
+      - apt update
+      - apt install -yq protobuf-compiler
       - cargo build
       - cargo test
