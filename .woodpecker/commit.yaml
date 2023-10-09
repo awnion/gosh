@@ -3,10 +3,21 @@ when:
     - pull_request
     - tag
 
+matrix:
+  bin:
+    - git_remote_gosh
+    - git_remote_gosh_v1_0_0
+
+  include:
+    - bin: git_remote_gosh
+      dir: gosh-dispatcher
+    - bin: git_remote_gosh_v1_0_0
+      dir: v1_x/git-remote-gosh
+
 steps:
   test:
     image: rust:latest
-    directory: gosh-dispatcher
+    directory: ${dir}
     commands:
       - cargo build
       - cargo test
