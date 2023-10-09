@@ -1,0 +1,12 @@
+when:
+  - event:
+    - pull_request
+    - tag
+
+steps:
+  test:
+    image: rust:latest
+    directory: gosh-dispatcher
+    commands:
+      - cargo build
+      - cargo test
