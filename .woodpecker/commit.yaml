@@ -1,0 +1,25 @@
+when:
+  - event:
+    - pull_request
+    - tag
+
+matrix:
+  bin:
+    - git_remote_gosh
+    - git_remote_gosh_v1_0_0
+
+  include:
+    - bin: git_remote_gosh
+      dir: gosh-dispatcher
+    - bin: git_remote_gosh_v1_0_0
+      dir: v1_x/git-remote-gosh
+
+
+steps:
+  test:
+    image: rust:latest
+    directory: ${dir}
+    commands:
+      - apt update
+      - apt install -yq protobuf-compiler
+      - cargo build -r
